@@ -1,0 +1,26 @@
+﻿# dependencies
+node_modules/
+.venv/
+venv/
+
+# Next.js build output
+.next/
+out/
+
+# env
+.env
+.env.*
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# TypeScript build output
+dist/

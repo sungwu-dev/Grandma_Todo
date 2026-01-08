@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   DEFAULT_ALERT_MINUTES,
   DEFAULT_ALERT_TARGET,
@@ -537,6 +538,9 @@ export default function ElderPage() {
 
   return (
     <div className="app" id="appRoot">
+      <Link className="big-button elder-calendar-fab" href="/elder/calendar">
+        달력 보기
+      </Link>
       <header className="top">
         <div id="dateText" className="date-text">
           {dateLine}

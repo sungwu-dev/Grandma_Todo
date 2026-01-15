@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type WheelEvent } from "react";
 import KoreanLunarCalendar from "korean-lunar-calendar";
+import AuthGate from "@/components/auth-gate";
 import type { CalendarEvent } from "@/lib/types";
 import { getDateKey, pad2, toMinutes } from "@/lib/time";
 import { loadEvents, saveEvents } from "@/lib/storage";
@@ -124,7 +125,7 @@ const getGrandmaBirthdayKey = (year: number) => {
   }
 };
 
-export default function CalendarPage() {
+function CalendarPageContent() {
   const today = new Date();
   const supabaseAvailable = useMemo(() => {
     return Boolean(
@@ -933,5 +934,13 @@ export default function CalendarPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CalendarPage() {
+  return (
+    <AuthGate>
+      <CalendarPageContent />
+    </AuthGate>
   );
 }

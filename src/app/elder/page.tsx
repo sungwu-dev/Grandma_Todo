@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AuthGate from "@/components/auth-gate";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   DEFAULT_ALERT_MINUTES,
@@ -92,7 +93,7 @@ const eventOccursOnDate = (event: CalendarEvent, dateKey: string) => {
   return false;
 };
 
-export default function ElderPage() {
+function ElderPageContent() {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(TIME_BLOCKS);
   const [now, setNow] = useState(() => new Date());
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -795,5 +796,13 @@ export default function ElderPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ElderPage() {
+  return (
+    <AuthGate>
+      <ElderPageContent />
+    </AuthGate>
   );
 }

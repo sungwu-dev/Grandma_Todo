@@ -1338,29 +1338,25 @@ input {
 }
 
 .elder-calendar-fab {
-  position: fixed;
-  top: clamp(12px, 2vw, 20px);
-  right: clamp(12px, 2vw, 20px);
-  z-index: 80;
+  position: static;
+  z-index: 1;
   padding: 16px 24px;
   font-size: clamp(20px, 2.6vw, 32px);
   box-shadow: var(--shadow-strong);
 }
 
 .elder-calendar-fab-left {
-  right: auto;
-  left: clamp(12px, 2vw, 20px);
+  margin-right: 0;
 }
 
 .elder-top-actions {
-  position: fixed;
-  top: clamp(12px, 2vw, 20px);
-  left: clamp(12px, 2vw, 20px);
-  right: clamp(12px, 2vw, 20px);
-  z-index: 80;
+  position: static;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: clamp(8px, 1.6vw, 14px);
+  margin-bottom: clamp(8px, 1.8vw, 16px);
 }
 
 .elder-top-actions .elder-calendar-fab {
@@ -1724,6 +1720,40 @@ input {
   background: #fdecec;
   color: #b42318;
   border: 1px solid rgba(214, 75, 75, 0.3);
+}
+
+@media (max-width: 1200px) {
+  .app {
+    max-width: 100%;
+  }
+
+  .middle {
+    grid-template-columns: minmax(90px, 1fr) minmax(260px, 1.4fr) minmax(90px, 1fr);
+    column-gap: clamp(12px, 3vw, 32px);
+    width: 100%;
+    margin-inline: 0;
+  }
+
+  .task-area {
+    padding: clamp(24px, 3vw, 38px) clamp(20px, 3vw, 44px);
+  }
+
+  .nav-btn {
+    width: clamp(84px, 10vw, 120px);
+    height: clamp(84px, 10vw, 120px);
+  }
+
+  .elder-week {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .elder-week-board {
+    grid-template-columns: repeat(7, minmax(160px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
 }
 
 @media (max-width: 960px) {

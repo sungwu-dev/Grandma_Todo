@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import AuthGate from "@/components/auth-gate";
 import {
   DEFAULT_ALERT_MINUTES,
   DEFAULT_ALERT_TARGET,
@@ -86,7 +87,7 @@ function buildAlertInputs(values: number[], count: number): string[] {
   return fillAlertMinutes(values, count).map((value) => String(value));
 }
 
-export default function FamilyPage() {
+function FamilyPageContent() {
   const [blocks, setBlocks] = useState<TimeBlock[]>(TIME_BLOCKS);
   const [form, setForm] = useState(emptyForm);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -460,5 +461,13 @@ export default function FamilyPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function FamilyPage() {
+  return (
+    <AuthGate>
+      <FamilyPageContent />
+    </AuthGate>
   );
 }

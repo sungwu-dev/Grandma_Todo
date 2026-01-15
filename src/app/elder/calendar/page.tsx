@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AuthGate from "@/components/auth-gate";
 import { WEEKDAY_THEMES } from "@/lib/constants";
 import type { CalendarEvent } from "@/lib/types";
 import { addDays, getDateKey, pad2, toMinutes } from "@/lib/time";
@@ -68,7 +69,7 @@ const getWeekStart = (date: Date) => {
   return addDays(date, -diffFromMonday);
 };
 
-export default function ElderCalendarPage() {
+function ElderCalendarContent() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const today = useMemo(() => new Date(), []);
@@ -129,16 +130,21 @@ export default function ElderCalendarPage() {
 
   return (
     <div className="page elder-week elder-week-screen">
-      <button
-        type="button"
-        className="big-button elder-calendar-fab elder-calendar-fab-left"
-        onClick={() => setWeekOffset(0)}
-      >
-        금주 일정
-      </button>
-      <Link className="big-button elder-calendar-fab" href="/elder">
-        현재 할 일
-      </Link>
+      <div className="elder-top-actions" aria-label="빠른 이동">
+        <button
+          type="button"
+          className="big-button elder-calendar-fab elder-calendar-fab-left"
+          onClick={() => setWeekOffset(0)}
+        >
+          금주 일정
+        </button>
+        <Link
+          className="big-button elder-calendar-fab elder-calendar-fab-right"
+          href="/elder"
+        >
+          현재 할 일
+        </Link>
+      </div>
       <header className="elder-week-top" aria-label="주간 이동">
         <div className="elder-week-title-row">
           <button
@@ -208,5 +214,13 @@ export default function ElderCalendarPage() {
         })}
       </section>
     </div>
+  );
+}
+
+export default function ElderCalendarPage() {
+  return (
+    <AuthGate>
+      <ElderCalendarContent />
+    </AuthGate>
   );
 }

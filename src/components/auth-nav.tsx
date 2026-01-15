@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type AuthStatus = "loading" | "signedOut" | "signedIn";
+type AuthSessionData = { session: { user: { id: string } } | null };
 
 const NAV_LINKS = [
   { href: "/recurring_sch", label: "반복 일정" },
@@ -63,16 +64,20 @@ export default function AuthNav() {
         setIsGrandma(false);
         return;
       }
-      const grandma = (members ?? []).some((member) => member.role === "viewer");
+      const grandma = (members ?? []).some(
+        (member: { role?: string | null }) => member.role === "viewer"
+      );
       setIsGrandma(grandma);
     };
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: AuthSessionData }) => {
       void updateSessionState(data.session);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      void updateSessionState(session);
-    });
+    const { data } = supabase.auth.onAuthStateChange(
+      (_event: string, session: AuthSessionData["session"]) => {
+        void updateSessionState(session);
+      }
+    );
     return () => {
       cancelled = true;
       data.subscription.unsubscribe();

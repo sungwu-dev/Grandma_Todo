@@ -248,7 +248,9 @@ export default function ElderPage() {
         setHomeButtonReady(true);
         return;
       }
-      const isGrandma = (members ?? []).some((member) => member.role === "viewer");
+      const isGrandma = (members ?? []).some(
+        (member: { role?: string | null }) => member.role === "viewer"
+      );
       setShowHomeButton(!isGrandma);
       setHomeButtonReady(true);
     };
@@ -306,7 +308,7 @@ export default function ElderPage() {
   }, []);
 
   useEffect(() => {
-    const timerId = window.setInterval(() => setNow(new Date()), 1000);
+    const timerId = setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timerId);
   }, []);
 
@@ -321,7 +323,7 @@ export default function ElderPage() {
     setPreviewIndex(null);
     setPreviewOffset(0);
     setPreviewDayOffset(0);
-    const timerId = window.setInterval(updateIndex, 30000);
+    const timerId = setInterval(updateIndex, 30000);
     return () => window.clearInterval(timerId);
   }, [blocks]);
 
@@ -418,7 +420,7 @@ export default function ElderPage() {
     }
     let toggles = 0;
     setFlashOn(true);
-    flashIntervalRef.current = window.setInterval(() => {
+    flashIntervalRef.current = setInterval(() => {
       // 초기 ON 포함 6회 번쩍임을 만들기 위해 11번 토글한다.
       toggles += 1;
       setFlashOn((prev) => !prev);
@@ -475,7 +477,7 @@ export default function ElderPage() {
     setAlertInfo({ type, message });
     startFlash();
     playBeep(beepTimes);
-    alertTimeoutRef.current = window.setTimeout(() => {
+    alertTimeoutRef.current = setTimeout(() => {
       stopAlert();
     }, 8000);
   };
@@ -507,7 +509,7 @@ export default function ElderPage() {
     if (previewTimerRef.current) {
       window.clearTimeout(previewTimerRef.current);
     }
-    previewTimerRef.current = window.setTimeout(() => {
+    previewTimerRef.current = setTimeout(() => {
       setPreviewIndex(null);
       setPreviewOffset(0);
       setPreviewDayOffset(0);
@@ -599,7 +601,7 @@ export default function ElderPage() {
     };
 
     tick();
-    const timerId = window.setInterval(tick, 15000);
+    const timerId = setInterval(tick, 15000);
     return () => window.clearInterval(timerId);
   }, [blocks, doneSet]);
 
@@ -625,7 +627,7 @@ export default function ElderPage() {
       if (doneModalTimerRef.current) {
         window.clearTimeout(doneModalTimerRef.current);
       }
-      doneModalTimerRef.current = window.setTimeout(() => {
+      doneModalTimerRef.current = setTimeout(() => {
         closeDoneModal();
       }, 2000);
     }

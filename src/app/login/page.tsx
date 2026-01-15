@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -14,6 +15,7 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Notice = { type: "success" | "error"; text: string } | null;
+type AuthSessionData = { session: { user: { id: string } } | null };
 type SignupForm = {
   name: string;
   relation: string;
@@ -222,7 +224,7 @@ const SIGNUP_STEPS: SignupStep[] = [
   }
 ];
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSignup = searchParams.get("mode") === "signup";
@@ -267,7 +269,7 @@ export default function LoginPage() {
     if (!supabase) {
       return;
     }
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: AuthSessionData }) => {
       if (data.session) {
         router.replace(redirectTo);
       }
@@ -672,5 +674,13 @@ export default function LoginPage() {
       )}
 
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

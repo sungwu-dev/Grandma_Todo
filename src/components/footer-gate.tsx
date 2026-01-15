@@ -8,6 +8,7 @@ type FooterGateProps = {
 };
 
 type Session = { user: { id: string } } | null;
+type AuthSessionData = { session: Session };
 
 export default function FooterGate({ children }: FooterGateProps) {
   const [visible, setVisible] = useState(false);
@@ -39,13 +40,15 @@ export default function FooterGate({ children }: FooterGateProps) {
       setVisible(Boolean(session));
     };
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: AuthSessionData }) => {
       updateVisibility(data.session);
     });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      updateVisibility(session);
-    });
+    const { data } = supabase.auth.onAuthStateChange(
+      (_event: string, session: Session) => {
+        updateVisibility(session);
+      }
+    );
 
     return () => {
       cancelled = true;

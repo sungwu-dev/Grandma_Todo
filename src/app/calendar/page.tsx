@@ -272,24 +272,24 @@ export default function CalendarPage() {
     const yearsInView = Array.from(
       new Set(monthDays.map((day) => day.date.getFullYear()))
     );
-    return yearsInView
-      .map((year) => {
-        const key = getGrandmaBirthdayKey(year);
-        if (!key) {
-          return null;
-        }
-        return {
-          id: `grandma-birthday-${year}`,
-          startDate: key,
-          endDate: key,
-          start: "00:00",
-          end: "23:59",
-          label: "할머니 생신(음력)",
-          allDay: true,
-          source: "system"
-        };
-      })
-      .filter((event): event is CalendarEvent => Boolean(event));
+    const items: CalendarEvent[] = [];
+    yearsInView.forEach((year) => {
+      const key = getGrandmaBirthdayKey(year);
+      if (!key) {
+        return;
+      }
+      items.push({
+        id: `grandma-birthday-${year}`,
+        startDate: key,
+        endDate: key,
+        start: "00:00",
+        end: "23:59",
+        label: "할머니 생신(음력)",
+        allDay: true,
+        source: "system"
+      });
+    });
+    return items;
   }, [monthDays]);
 
   const displayEvents = useMemo(() => {
@@ -518,7 +518,7 @@ export default function CalendarPage() {
     if (wheelTimerRef.current !== null) {
       return;
     }
-    wheelTimerRef.current = window.setTimeout(() => {
+    wheelTimerRef.current = setTimeout(() => {
       const delta = wheelDeltaRef.current;
       wheelDeltaRef.current = 0;
       wheelTimerRef.current = null;
@@ -530,7 +530,7 @@ export default function CalendarPage() {
       if (monthAnimationRef.current !== null) {
         window.clearTimeout(monthAnimationRef.current);
       }
-      monthAnimationRef.current = window.setTimeout(() => {
+      monthAnimationRef.current = setTimeout(() => {
         setMonthTransition("none");
         monthAnimationRef.current = null;
       }, 260);

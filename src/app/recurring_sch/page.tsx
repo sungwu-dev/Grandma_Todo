@@ -287,9 +287,9 @@ export default function FamilyPage() {
   };
 
   return (
-    <div className="page">
+    <div className="page recurring-page">
       <header className="page-header">
-        <h1 className="page-title">가족 관리</h1>
+        <h1 className="page-title">반복 일정</h1>
         <p className="page-subtitle">시간 블록을 추가하거나 수정해 주세요.</p>
       </header>
 
@@ -320,17 +320,6 @@ export default function FamilyPage() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="block-actions">
-          <button className="btn secondary" type="button" onClick={handleReset}>
-            기본 예시 스케줄로 초기화
-          </button>
-          <Link className="btn ghost" href="/elder">
-            할머니 화면 보기
-          </Link>
         </div>
       </section>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   DEFAULT_ALERT_MINUTES,
   DEFAULT_ALERT_TARGET,
@@ -58,6 +59,39 @@ function getAlertMinutesForBlock(block: { alertMinutes?: number[] }): number[] {
   return result;
 }
 
+const parseDateKey = (value: string) => {
+  const [year, month, day] = value.split("-").map((part) => Number(part));
+  if (!year || !month || !day) {
+    return null;
+  }
+  return new Date(year, month - 1, day);
+};
+
+const eventOccursOnDate = (event: CalendarEvent, dateKey: string) => {
+  const repeat = event.repeat ?? "none";
+  if (repeat === "none") {
+    return dateKey >= event.startDate && dateKey <= event.endDate;
+  }
+  if (dateKey < event.startDate) {
+    return false;
+  }
+  const date = parseDateKey(dateKey);
+  const base = parseDateKey(event.startDate);
+  if (!date || !base) {
+    return false;
+  }
+  if (repeat === "daily") {
+    return true;
+  }
+  if (repeat === "weekly") {
+    return date.getDay() === base.getDay();
+  }
+  if (repeat === "yearly") {
+    return date.getMonth() === base.getMonth() && date.getDate() === base.getDate();
+  }
+  return false;
+};
+
 export default function ElderPage() {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(TIME_BLOCKS);
   const [now, setNow] = useState(() => new Date());
@@ -79,6 +113,23 @@ export default function ElderPage() {
   const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioEnabledRef = useRef(false);
+  const themeDefaultsRef = useRef<{
+    theme: string;
+    themeTint: string;
+    pageBg: string;
+  } | null>(null);
+  const supabaseAvailable = useMemo(() => {
+    return Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  }, []);
+  const supabase = useMemo(
+    () => (supabaseAvailable ? createSupabaseBrowserClient() : null),
+    [supabaseAvailable]
+  );
+  const [showHomeButton, setShowHomeButton] = useState(true);
+  const [homeButtonReady, setHomeButtonReady] = useState(false);
 
   const blocks = useMemo(() => buildBlocks(timeBlocks), [timeBlocks]);
   const displayIndex = previewIndex ?? currentIndex;
@@ -121,9 +172,7 @@ export default function ElderPage() {
       return null;
     }
     const dateKey = getDateKey(displayDate);
-    const candidates = events.filter(
-      (event) => dateKey >= event.startDate && dateKey <= event.endDate
-    );
+    const candidates = events.filter((event) => eventOccursOnDate(event, dateKey));
     if (candidates.length === 0) {
       return null;
     }
@@ -165,6 +214,50 @@ export default function ElderPage() {
     }
   }
   const doneDisabled = hideDone || beforeStart || Boolean(activeEvent);
+
+  useEffect(() => {
+    if (!supabaseAvailable) {
+      setShowHomeButton(true);
+      setHomeButtonReady(true);
+      return;
+    }
+    if (!supabase) {
+      return;
+    }
+
+    let cancelled = false;
+    const checkHomeVisibility = async () => {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      if (!session) {
+        if (!cancelled) {
+          setShowHomeButton(true);
+          setHomeButtonReady(true);
+        }
+        return;
+      }
+      const { data: members, error } = await supabase
+        .from("group_members")
+        .select("role")
+        .eq("user_id", session.user.id);
+      if (cancelled) {
+        return;
+      }
+      if (error) {
+        setShowHomeButton(true);
+        setHomeButtonReady(true);
+        return;
+      }
+      const isGrandma = (members ?? []).some((member) => member.role === "viewer");
+      setShowHomeButton(!isGrandma);
+      setHomeButtonReady(true);
+    };
+
+    void checkHomeVisibility();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabaseAvailable, supabase]);
 
   useEffect(() => {
     const stored = localStorage.getItem("audio_enabled") === "1";
@@ -241,8 +334,33 @@ export default function ElderPage() {
   }, [now, currentDateKey]);
 
   useEffect(() => {
+    if (!themeDefaultsRef.current) {
+      const styles = getComputedStyle(document.documentElement);
+      themeDefaultsRef.current = {
+        theme: styles.getPropertyValue("--theme").trim(),
+        themeTint: styles.getPropertyValue("--theme-tint").trim(),
+        pageBg: styles.getPropertyValue("--page-bg").trim()
+      };
+    }
+    return () => {
+      const defaults = themeDefaultsRef.current;
+      if (!defaults) {
+        return;
+      }
+      document.documentElement.style.setProperty("--theme", defaults.theme);
+      document.documentElement.style.setProperty("--theme-tint", defaults.themeTint);
+      if (defaults.pageBg) {
+        document.documentElement.style.setProperty("--page-bg", defaults.pageBg);
+      } else {
+        document.documentElement.style.removeProperty("--page-bg");
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     document.documentElement.style.setProperty("--theme", theme.color);
     document.documentElement.style.setProperty("--theme-tint", theme.tint);
+    document.documentElement.style.setProperty("--page-bg", theme.tint);
   }, [theme.color, theme.tint]);
 
   useEffect(() => {
@@ -535,12 +653,20 @@ export default function ElderPage() {
   const taskSizeClass =
     textLength >= 26 ? "task-text--xlong" : textLength >= 18 ? "task-text--long" : "";
   const nowLabelText = isPreview ? "미리보기" : activeEvent ? "특별 일정" : "지금 할 일";
+  const shouldShowHomeButton = !supabaseAvailable || (homeButtonReady && showHomeButton);
 
   return (
-    <div className="app" id="appRoot">
-      <Link className="big-button elder-calendar-fab" href="/elder/calendar">
-        달력 보기
-      </Link>
+    <div className="app elder-home" id="appRoot">
+      <div className="elder-top-actions" aria-label="빠른 이동">
+        {shouldShowHomeButton && (
+          <Link className="big-button elder-calendar-fab elder-calendar-fab-left" href="/">
+            홈
+          </Link>
+        )}
+        <Link className="big-button elder-calendar-fab elder-calendar-fab-right" href="/elder/calendar">
+          달력 보기
+        </Link>
+      </div>
       <header className="top">
         <div id="dateText" className="date-text">
           {dateLine}

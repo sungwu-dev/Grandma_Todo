@@ -1,12 +1,28 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type WheelEvent } from "react";
-import Link from "next/link";
+import KoreanLunarCalendar from "korean-lunar-calendar";
 import type { CalendarEvent } from "@/lib/types";
-import { getDateKey, toMinutes } from "@/lib/time";
+import { getDateKey, pad2, toMinutes } from "@/lib/time";
 import { loadEvents, saveEvents } from "@/lib/storage";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Notice = { type: "success" | "error"; text: string } | null;
+type RepeatOption = "none" | "daily" | "weekly" | "yearly";
+type UserProfile = {
+  name: string;
+  relation: string;
+  birthdate: string;
+};
+
+const REPEAT_OPTIONS: { value: RepeatOption; label: string }[] = [
+  { value: "none", label: "반복 안 함" },
+  { value: "daily", label: "매일 반복" },
+  { value: "weekly", label: "매주 반복" },
+  { value: "yearly", label: "매년 반복" }
+];
+const GRANDMA_LUNAR_MONTH = 8;
+const GRANDMA_LUNAR_DAY = 18;
 
 const weekLabels = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -16,7 +32,8 @@ const buildDefaultForm = (date: string) => ({
   start: "09:00",
   end: "10:00",
   label: "",
-  allDay: false
+  allDay: false,
+  repeat: "none" as RepeatOption
 });
 
 const createEventId = () => {
@@ -58,28 +75,72 @@ const parseDateKey = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
-const buildRangeKeys = (startKey: string, endKey: string) => {
-  const startDate = parseDateKey(startKey);
-  const endDate = parseDateKey(endKey);
-  if (!startDate || !endDate) {
-    return [];
+const eventOccursOnDate = (event: CalendarEvent, dateKey: string) => {
+  const repeat = event.repeat ?? "none";
+  if (repeat === "none") {
+    return dateKey >= event.startDate && dateKey <= event.endDate;
   }
-  const [from, to] = startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
-  const cursor = new Date(from);
-  const keys: string[] = [];
-  while (cursor <= to) {
-    keys.push(getDateKey(cursor));
-    cursor.setDate(cursor.getDate() + 1);
+  if (dateKey < event.startDate) {
+    return false;
   }
-  return keys;
+  const date = parseDateKey(dateKey);
+  const base = parseDateKey(event.startDate);
+  if (!date || !base) {
+    return false;
+  }
+  if (repeat === "daily") {
+    return true;
+  }
+  if (repeat === "weekly") {
+    return date.getDay() === base.getDay();
+  }
+  if (repeat === "yearly") {
+    return date.getMonth() === base.getMonth() && date.getDate() === base.getDate();
+  }
+  return false;
+};
+
+const formatBirthdayLabel = (profile: UserProfile) => {
+  if (!profile.relation) {
+    return `${profile.name} 생일`;
+  }
+  return `${profile.name}(${profile.relation}) 생일`;
+};
+
+const getGrandmaBirthdayKey = (year: number) => {
+  try {
+    const calendar = new KoreanLunarCalendar();
+    const ok = calendar.setLunarDate(year, GRANDMA_LUNAR_MONTH, GRANDMA_LUNAR_DAY, false);
+    if (!ok) {
+      return null;
+    }
+    const solar = calendar.getSolarCalendar();
+    if (!solar || !solar.year || !solar.month || !solar.day) {
+      return null;
+    }
+    return `${solar.year}-${pad2(solar.month)}-${pad2(solar.day)}`;
+  } catch {
+    return null;
+  }
 };
 
 export default function CalendarPage() {
   const today = new Date();
+  const supabaseAvailable = useMemo(() => {
+    return Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  }, []);
+  const supabase = useMemo(
+    () => (supabaseAvailable ? createSupabaseBrowserClient() : null),
+    [supabaseAvailable]
+  );
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(getDateKey(today));
   const [form, setForm] = useState(buildDefaultForm(getDateKey(today)));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [yearMode, setYearMode] = useState<"display" | "select" | "input">("display");
@@ -98,6 +159,44 @@ export default function CalendarPage() {
   useEffect(() => {
     setEvents(loadEvents());
   }, []);
+
+  useEffect(() => {
+    if (!supabase) {
+      setProfile(null);
+      return;
+    }
+    let cancelled = false;
+    const loadProfile = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) {
+        return;
+      }
+      const metadata = data.user?.user_metadata ?? {};
+      const name =
+        typeof metadata.name === "string"
+          ? metadata.name.trim()
+          : typeof metadata.nickname === "string"
+            ? metadata.nickname.trim()
+            : "";
+      const relation =
+        typeof metadata.relation === "string" ? metadata.relation.trim() : "";
+      const birthdate =
+        typeof metadata.birthdate === "string" ? metadata.birthdate.trim() : "";
+      if (name && birthdate) {
+        setProfile({ name, relation, birthdate });
+      } else {
+        setProfile(null);
+      }
+    };
+    void loadProfile();
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      void loadProfile();
+    });
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   useEffect(() => {
     return () => {
@@ -149,19 +248,74 @@ export default function CalendarPage() {
   const months = useMemo(() => Array.from({ length: 12 }, (_, index) => index + 1), []);
   const monthDays = useMemo(() => buildMonthDays(cursor), [cursor]);
 
+  const userBirthdayEvent = useMemo<CalendarEvent | null>(() => {
+    if (!profile) {
+      return null;
+    }
+    if (!parseDateKey(profile.birthdate)) {
+      return null;
+    }
+    return {
+      id: `birthday-${profile.name}-${profile.birthdate}`,
+      startDate: profile.birthdate,
+      endDate: profile.birthdate,
+      start: "00:00",
+      end: "23:59",
+      label: formatBirthdayLabel(profile),
+      allDay: true,
+      repeat: "yearly",
+      source: "system"
+    };
+  }, [profile]);
+
+  const grandmaBirthdayEvents = useMemo<CalendarEvent[]>(() => {
+    const yearsInView = Array.from(
+      new Set(monthDays.map((day) => day.date.getFullYear()))
+    );
+    return yearsInView
+      .map((year) => {
+        const key = getGrandmaBirthdayKey(year);
+        if (!key) {
+          return null;
+        }
+        return {
+          id: `grandma-birthday-${year}`,
+          startDate: key,
+          endDate: key,
+          start: "00:00",
+          end: "23:59",
+          label: "할머니 생신(음력)",
+          allDay: true,
+          source: "system"
+        };
+      })
+      .filter((event): event is CalendarEvent => Boolean(event));
+  }, [monthDays]);
+
+  const displayEvents = useMemo(() => {
+    const list = [...events];
+    if (userBirthdayEvent) {
+      list.push(userBirthdayEvent);
+    }
+    list.push(...grandmaBirthdayEvents);
+    return list;
+  }, [events, userBirthdayEvent, grandmaBirthdayEvents]);
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
-    for (const event of events) {
-      const keys = buildRangeKeys(event.startDate, event.endDate);
-      for (const key of keys) {
-        if (!map.has(key)) {
-          map.set(key, []);
+    for (const day of monthDays) {
+      const list: CalendarEvent[] = [];
+      for (const event of displayEvents) {
+        if (eventOccursOnDate(event, day.key)) {
+          list.push(event);
         }
-        map.get(key)?.push(event);
+      }
+      if (list.length > 0) {
+        map.set(day.key, list);
       }
     }
     return map;
-  }, [events]);
+  }, [displayEvents, monthDays]);
 
   const selectedEvents = useMemo(() => {
     const list = eventsByDate.get(selectedDate) ?? [];
@@ -190,7 +344,15 @@ export default function CalendarPage() {
   };
 
   const handleChange = (field: keyof typeof form, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "startDate" && typeof value === "string") {
+        if (prev.repeat && prev.repeat !== "none") {
+          next.endDate = value;
+        }
+      }
+      return next;
+    });
     if (field === "startDate" && typeof value === "string") {
       const parsed = parseDateKey(value);
       if (parsed) {
@@ -200,14 +362,24 @@ export default function CalendarPage() {
     }
   };
 
+  const handleRepeatChange = (value: RepeatOption) => {
+    setForm((prev) => ({
+      ...prev,
+      repeat: value,
+      endDate: value === "none" ? prev.endDate : prev.startDate
+    }));
+  };
+
   const validateForm = () => {
-    if (!form.startDate || !form.endDate) {
+    const repeat = form.repeat ?? "none";
+    const effectiveEndDate = repeat === "none" ? form.endDate : form.startDate;
+    if (!form.startDate || !effectiveEndDate) {
       return "기간을 선택해 주세요.";
     }
     if (!form.label.trim()) {
       return "일정 내용을 입력해 주세요.";
     }
-    if (form.endDate < form.startDate) {
+    if (effectiveEndDate < form.startDate) {
       return "종료 날짜는 시작 날짜보다 빠를 수 없습니다.";
     }
     if (form.allDay) {
@@ -231,14 +403,18 @@ export default function CalendarPage() {
       setNotice({ type: "error", text: error });
       return;
     }
+    const repeat = form.repeat ?? "none";
+    const effectiveEndDate = repeat === "none" ? form.endDate : form.startDate;
     const nextEvent: CalendarEvent = {
       id: createEventId(),
       startDate: form.startDate,
-      endDate: form.endDate,
+      endDate: effectiveEndDate,
       start: form.allDay ? "00:00" : form.start,
       end: form.allDay ? "23:59" : form.end,
       label: form.label.trim(),
-      allDay: form.allDay
+      allDay: form.allDay,
+      repeat,
+      source: "user"
     };
     const nextEvents = sortEvents([...events, nextEvent]);
     setEvents(nextEvents);
@@ -361,6 +537,8 @@ export default function CalendarPage() {
       setCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction, 1));
     }, 140);
   };
+
+  const repeatLocked = (form.repeat ?? "none") !== "none";
 
   return (
     <div className="page calendar-page">
@@ -540,6 +718,10 @@ export default function CalendarPage() {
             <div className="calendar-grid">
               {monthDays.map((day) => {
                 const dayEvents = eventsByDate.get(day.key) ?? [];
+                const systemEvents = dayEvents.filter((event) => event.source === "system");
+                const systemPreview = systemEvents.slice(0, 1);
+                const extraSystemCount = systemEvents.length - systemPreview.length;
+                const hasUserEvents = dayEvents.some((event) => event.source !== "system");
                 return (
                   <button
                     key={day.key}
@@ -551,7 +733,17 @@ export default function CalendarPage() {
                     onClick={() => handleSelectDate(day.key, true)}
                   >
                     <span className="calendar-day-number">{Number(day.key.slice(-2))}</span>
-                    {dayEvents.length > 0 && (
+                    {systemPreview.map((event) => (
+                      <span key={event.id} className="calendar-badge" title={event.label}>
+                        {event.label}
+                      </span>
+                    ))}
+                    {extraSystemCount > 0 && (
+                      <span className="calendar-badge calendar-badge--more">
+                        +{extraSystemCount}
+                      </span>
+                    )}
+                    {hasUserEvents && (
                       <span className="calendar-dot" aria-hidden="true" />
                     )}
                   </button>
@@ -608,20 +800,24 @@ export default function CalendarPage() {
                       <div>
                         <div className="calendar-event-title">{event.label}</div>
                         <div className="calendar-event-time">
-                          {event.startDate === event.endDate
-                            ? event.startDate
-                            : `${event.startDate} ~ ${event.endDate}`}
+                          {(event.repeat ?? "none") !== "none"
+                            ? selectedDate
+                            : event.startDate === event.endDate
+                              ? event.startDate
+                              : `${event.startDate} ~ ${event.endDate}`}
                           {" · "}
                           {event.allDay ? "종일" : `${event.start} ~ ${event.end}`}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="btn ghost"
-                        onClick={() => handleDelete(event.id)}
-                      >
-                        삭제
-                      </button>
+                      {event.source !== "system" && (
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() => handleDelete(event.id)}
+                        >
+                          삭제
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -664,12 +860,29 @@ export default function CalendarPage() {
                     <input
                       className="input"
                       type="date"
-                      value={form.endDate}
+                      value={repeatLocked ? form.startDate : form.endDate}
                       onChange={(event) => handleChange("endDate", event.target.value)}
-                      required
+                      disabled={repeatLocked}
+                      required={!repeatLocked}
                     />
                   </label>
                 </div>
+                <label className="field">
+                  <span>반복</span>
+                  <select
+                    className="input"
+                    value={form.repeat}
+                    onChange={(event) =>
+                      handleRepeatChange(event.target.value as RepeatOption)
+                    }
+                  >
+                    {REPEAT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label className="calendar-toggle">
                   <input
                     type="checkbox"
@@ -712,9 +925,6 @@ export default function CalendarPage() {
                   <button type="button" className="btn ghost" onClick={closeAddModal}>
                     닫기
                   </button>
-                  <Link className="btn secondary" href="/elder">
-                    할머니 화면 보기
-                  </Link>
                 </div>
               </form>
               {notice && <div className={`notice ${notice.type}`}>{notice.text}</div>}

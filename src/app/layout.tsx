@@ -1,8 +1,9 @@
 import "./globals.css";
+import AuthNav from "@/components/auth-nav";
 
 export const metadata = {
-  title: "초간단 일정 안내",
-  description: "할머니를 위한 초간단 일정 안내"
+  title: "일정 도우미",
+  description: "일정 도우미"
 };
 
 export default function RootLayout({
@@ -12,7 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <AuthNav />
+        {children}
+      </body>
     </html>
   );
 }

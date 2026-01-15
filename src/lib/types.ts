@@ -27,6 +27,8 @@ export type CalendarEvent = {
   end: string;
   label: string;
   allDay?: boolean;
+  repeat?: "none" | "daily" | "weekly" | "yearly";
+  source?: "user" | "system";
 };
 
 export type WeekdayTheme = {

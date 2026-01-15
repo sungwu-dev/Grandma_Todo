@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { WEEKDAY_THEMES } from "@/lib/constants";
 import type { CalendarEvent } from "@/lib/types";
 import { addDays, getDateKey, pad2, toMinutes } from "@/lib/time";
 import { loadEvents } from "@/lib/storage";
@@ -28,8 +29,38 @@ const sortEvents = (list: CalendarEvent[]) =>
 const formatEventTime = (event: CalendarEvent) =>
   event.allDay ? "종일" : `${event.start} ~ ${event.end}`;
 
-const eventMatchesDate = (event: CalendarEvent, dateKey: string) =>
-  dateKey >= event.startDate && dateKey <= event.endDate;
+const parseDateKey = (value: string) => {
+  const [year, month, day] = value.split("-").map((part) => Number(part));
+  if (!year || !month || !day) {
+    return null;
+  }
+  return new Date(year, month - 1, day);
+};
+
+const eventMatchesDate = (event: CalendarEvent, dateKey: string) => {
+  const repeat = event.repeat ?? "none";
+  if (repeat === "none") {
+    return dateKey >= event.startDate && dateKey <= event.endDate;
+  }
+  if (dateKey < event.startDate) {
+    return false;
+  }
+  const date = parseDateKey(dateKey);
+  const base = parseDateKey(event.startDate);
+  if (!date || !base) {
+    return false;
+  }
+  if (repeat === "daily") {
+    return true;
+  }
+  if (repeat === "weekly") {
+    return date.getDay() === base.getDay();
+  }
+  if (repeat === "yearly") {
+    return date.getMonth() === base.getMonth() && date.getDate() === base.getDate();
+  }
+  return false;
+};
 
 const getWeekStart = (date: Date) => {
   const day = date.getDay();
@@ -41,11 +72,47 @@ export default function ElderCalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const today = useMemo(() => new Date(), []);
+  const themeDefaultsRef = useRef<{
+    theme: string;
+    themeTint: string;
+    pageBg: string;
+  } | null>(null);
 
   useEffect(() => {
     // localStorage: events_v1 (CalendarEvent 목록)
     setEvents(loadEvents());
   }, []);
+
+  useEffect(() => {
+    if (!themeDefaultsRef.current) {
+      const styles = getComputedStyle(document.documentElement);
+      themeDefaultsRef.current = {
+        theme: styles.getPropertyValue("--theme").trim(),
+        themeTint: styles.getPropertyValue("--theme-tint").trim(),
+        pageBg: styles.getPropertyValue("--page-bg").trim()
+      };
+    }
+    return () => {
+      const defaults = themeDefaultsRef.current;
+      if (!defaults) {
+        return;
+      }
+      document.documentElement.style.setProperty("--theme", defaults.theme);
+      document.documentElement.style.setProperty("--theme-tint", defaults.themeTint);
+      if (defaults.pageBg) {
+        document.documentElement.style.setProperty("--page-bg", defaults.pageBg);
+      } else {
+        document.documentElement.style.removeProperty("--page-bg");
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const theme = WEEKDAY_THEMES[today.getDay()] ?? WEEKDAY_THEMES[0];
+    document.documentElement.style.setProperty("--theme", theme.color);
+    document.documentElement.style.setProperty("--theme-tint", theme.tint);
+    document.documentElement.style.setProperty("--page-bg", theme.tint);
+  }, [today]);
 
   const baseDate = useMemo(() => addDays(today, weekOffset * 7), [today, weekOffset]);
   const weekStart = useMemo(() => getWeekStart(baseDate), [baseDate]);
@@ -70,7 +137,7 @@ export default function ElderCalendarPage() {
         금주 일정
       </button>
       <Link className="big-button elder-calendar-fab" href="/elder">
-        오늘 화면
+        현재 할 일
       </Link>
       <header className="elder-week-top" aria-label="주간 이동">
         <div className="elder-week-title-row">

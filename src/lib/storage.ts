@@ -94,6 +94,7 @@ export function saveSchedule(blocks: TimeBlock[]): void {
 }
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const REPEAT_VALUES = new Set(["none", "daily", "weekly", "yearly"]);
 
 function normalizeEvent(item: Record<string, unknown>): CalendarEvent | null {
   const rawStartDate =
@@ -110,6 +111,10 @@ function normalizeEvent(item: Record<string, unknown>): CalendarEvent | null {
         : "";
   const label = typeof item.label === "string" ? item.label.trim() : "";
   const allDay = item.allDay === true;
+  const repeat =
+    typeof item.repeat === "string" && REPEAT_VALUES.has(item.repeat)
+      ? (item.repeat as CalendarEvent["repeat"])
+      : "none";
   const startValue =
     typeof item.start === "string" ? item.start : allDay ? "00:00" : "";
   const endValue =
@@ -137,7 +142,7 @@ function normalizeEvent(item: Record<string, unknown>): CalendarEvent | null {
       ? item.id
       : `${startDate}_${endDate}_${start}_${end}_${label}`;
 
-  return { id, startDate, endDate, start, end, label, allDay };
+  return { id, startDate, endDate, start, end, label, allDay, repeat };
 }
 
 export function loadEvents(): CalendarEvent[] {

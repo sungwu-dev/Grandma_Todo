@@ -3,3 +3,6 @@
 - project URL: https://swryqlcurehlapfksjcg.supabase.co
 - project ID(API): swryqlcurehlapfksjcg
 - anon KEY: sb_publishable_ppuf_ZdckxlhviAdSVVp5Q_ZvjCjR6d
+
+##resend
+api Key: re_Emb8FxYK_LpZjGuAaRt1QhftVLydQ2HMa

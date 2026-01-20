@@ -33,3 +33,6 @@
 ## supabase
 - Supabase 접속 정보는 `.env.local`에 보관합니다(깃에서 제외).
 - 필요하면 Supabase 콘솔(Settings → API)에서 확인하세요.
+
+## Domain
+https://grandma-todo.vercel.app/

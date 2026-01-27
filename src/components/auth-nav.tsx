@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -19,6 +19,9 @@ export default function AuthNav() {
   const pathname = usePathname();
   const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
   const [isGrandma, setIsGrandma] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuId = useId();
   const supabaseAvailable = useMemo(() => {
     return Boolean(
       process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -84,6 +87,50 @@ export default function AuthNav() {
     };
   }, [pathname, supabaseAvailable, supabase]);
 
+  useEffect(() => {
+    if (authStatus !== "signedIn") {
+      setProfileMenuOpen(false);
+    }
+  }, [authStatus]);
+
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!profileMenuOpen) {
+      return;
+    }
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!profileMenuRef.current) {
+        return;
+      }
+      const target = event.target as Node | null;
+      if (target && !profileMenuRef.current.contains(target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileMenuOpen]);
+
+  const handleLogout = async () => {
+    if (!supabase) {
+      return;
+    }
+    setProfileMenuOpen(false);
+    await supabase.auth.signOut();
+  };
+
   const isElderRoute = pathname?.startsWith("/elder");
   const hideForGrandma = isElderRoute && isGrandma;
   if (!pathname || hideForGrandma) {
@@ -105,9 +152,54 @@ export default function AuthNav() {
         </div>
         <div className="main-nav-actions">
           {authStatus === "signedIn" ? (
-            <Link className="profile-button" href="/mypage" aria-label="마이페이지">
-              <span className="profile-icon" aria-hidden="true" />
-            </Link>
+            <div className="profile-menu" ref={profileMenuRef}>
+              <button
+                className="profile-button"
+                type="button"
+                aria-label="프로필 메뉴"
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+                aria-controls={`${profileMenuId}-menu`}
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+              >
+                <span className="profile-icon" aria-hidden="true" />
+              </button>
+              <div
+                id={`${profileMenuId}-menu`}
+                className="profile-dropdown"
+                role="menu"
+                aria-hidden={!profileMenuOpen}
+                data-open={profileMenuOpen ? "true" : "false"}
+              >
+                <Link
+                  className="profile-menu-item"
+                  href="/mypage"
+                  role="menuitem"
+                  tabIndex={profileMenuOpen ? 0 : -1}
+                  onClick={() => setProfileMenuOpen(false)}
+                >
+                  마이페이지
+                </Link>
+                <Link
+                  className="profile-menu-item"
+                  href="/mypage/edit"
+                  role="menuitem"
+                  tabIndex={profileMenuOpen ? 0 : -1}
+                  onClick={() => setProfileMenuOpen(false)}
+                >
+                  정보 수정
+                </Link>
+                <button
+                  className="profile-menu-item danger"
+                  type="button"
+                  role="menuitem"
+                  tabIndex={profileMenuOpen ? 0 : -1}
+                  onClick={handleLogout}
+                >
+                  로그아웃
+                </button>
+              </div>
+            </div>
           ) : authStatus === "signedOut" ? (
             <>
               <Link className="btn secondary" href="/login?mode=signup">

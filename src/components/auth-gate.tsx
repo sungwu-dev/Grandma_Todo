@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+  type KeyboardEvent,
+  type MouseEvent,
+  type TouchEvent
+} from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type AuthGateProps = {
@@ -12,10 +21,38 @@ type Session = { user: { id: string } } | null;
 type AuthSessionData = { session: Session };
 type Notice = { type: "success" | "error"; text: string } | null;
 
+const createRevealHandlers = (setVisible: (next: boolean) => void) => ({
+  onMouseDown: (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setVisible(true);
+  },
+  onMouseUp: () => setVisible(false),
+  onMouseLeave: () => setVisible(false),
+  onTouchStart: (event: TouchEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setVisible(true);
+  },
+  onTouchEnd: () => setVisible(false),
+  onTouchCancel: () => setVisible(false),
+  onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      setVisible(true);
+    }
+  },
+  onKeyUp: (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      setVisible(false);
+    }
+  },
+  onBlur: () => setVisible(false)
+});
+
 export default function AuthGate({ children }: AuthGateProps) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [loading, setLoading] = useState(false);
   const supabaseAvailable = useMemo(() => {
@@ -28,6 +65,7 @@ export default function AuthGate({ children }: AuthGateProps) {
     () => (supabaseAvailable ? createSupabaseBrowserClient() : null),
     [supabaseAvailable]
   );
+  const passwordRevealHandlers = createRevealHandlers(setPasswordVisible);
 
   useEffect(() => {
     if (!supabaseAvailable) {
@@ -133,16 +171,28 @@ export default function AuthGate({ children }: AuthGateProps) {
         <div className="signup-field">
           <label className="field">
             <span>비밀번호</span>
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="비밀번호를 입력해 주세요"
-              autoComplete="current-password"
-              disabled={loading}
-              required
-            />
+            <div className="input-row">
+              <input
+                className="input"
+                type={passwordVisible ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="비밀번호를 입력해 주세요"
+                autoComplete="current-password"
+                disabled={loading}
+                required
+              />
+              <button
+                className="reveal-button"
+                type="button"
+                aria-label="비밀번호 표시"
+                aria-pressed={passwordVisible}
+                disabled={loading}
+                {...passwordRevealHandlers}
+              >
+                보기
+              </button>
+            </div>
           </label>
         </div>
         <div className="block-actions">

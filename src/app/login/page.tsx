@@ -8,7 +8,9 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
-  type KeyboardEvent
+  type KeyboardEvent,
+  type MouseEvent,
+  type TouchEvent
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -224,6 +226,33 @@ const SIGNUP_STEPS: SignupStep[] = [
   }
 ];
 
+const createRevealHandlers = (setVisible: (next: boolean) => void) => ({
+  onMouseDown: (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setVisible(true);
+  },
+  onMouseUp: () => setVisible(false),
+  onMouseLeave: () => setVisible(false),
+  onTouchStart: (event: TouchEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setVisible(true);
+  },
+  onTouchEnd: () => setVisible(false),
+  onTouchCancel: () => setVisible(false),
+  onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      setVisible(true);
+    }
+  },
+  onKeyUp: (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      setVisible(false);
+    }
+  },
+  onBlur: () => setVisible(false)
+});
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -242,6 +271,7 @@ function LoginPageContent() {
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginPasswordVisible, setLoginPasswordVisible] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [loading, setLoading] = useState(false);
   const [signupForm, setSignupForm] = useState<SignupForm>(initialSignupForm);
@@ -252,7 +282,10 @@ function LoginPageContent() {
   const [signupComplete, setSignupComplete] = useState(false);
   const [signupNotice, setSignupNotice] = useState<Notice>(null);
   const [signupLoading, setSignupLoading] = useState(false);
+  const [signupPasswordVisible, setSignupPasswordVisible] = useState(false);
   const birthdateRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const loginRevealHandlers = createRevealHandlers(setLoginPasswordVisible);
+  const signupRevealHandlers = createRevealHandlers(setSignupPasswordVisible);
   useEffect(() => {
     if (!isSignup) {
       return;
@@ -524,6 +557,44 @@ function LoginPageContent() {
                     </div>
                   );
                 }
+                if (step.key === "password") {
+                  return (
+                    <div key={step.key} className="signup-field">
+                      <label className="field">
+                        <span>{step.label}</span>
+                        <div className="input-row">
+                          <input
+                            className="input"
+                            type={signupPasswordVisible ? "text" : "password"}
+                            value={value}
+                            onChange={(event) =>
+                              handleSignupChange(step.key, event.target.value)
+                            }
+                            onBlur={() => handleSignupBlur(step.key)}
+                            placeholder={step.placeholder}
+                            autoComplete={step.autoComplete}
+                            inputMode={step.inputMode}
+                            maxLength={step.maxLength}
+                            required
+                            autoFocus={index === 0}
+                            disabled={signupLoading}
+                          />
+                          <button
+                            className="reveal-button"
+                            type="button"
+                            aria-label="비밀번호 표시"
+                            aria-pressed={signupPasswordVisible}
+                            disabled={signupLoading}
+                            {...signupRevealHandlers}
+                          >
+                            보기
+                          </button>
+                        </div>
+                      </label>
+                      {showError && <div className="notice error">{error}</div>}
+                    </div>
+                  );
+                }
                 if (step.key === "birthdate") {
                   return (
                     <div key={step.key} className="signup-field">
@@ -645,15 +716,26 @@ function LoginPageContent() {
             <div className="signup-field">
               <label className="field">
                 <span>비밀번호</span>
-                <input
-                  className="input"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="비밀번호를 입력해 주세요"
-                  autoComplete="current-password"
-                  required
-                />
+                <div className="input-row">
+                  <input
+                    className="input"
+                    type={loginPasswordVisible ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="비밀번호를 입력해 주세요"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    className="reveal-button"
+                    type="button"
+                    aria-label="비밀번호 표시"
+                    aria-pressed={loginPasswordVisible}
+                    {...loginRevealHandlers}
+                  >
+                    보기
+                  </button>
+                </div>
               </label>
             </div>
             <div className="block-actions">

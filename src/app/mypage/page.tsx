@@ -5,6 +5,46 @@ import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+type FamilyMember = {
+  name: string;
+  role: string;
+};
+
+type FamilyGroup = {
+  id: string;
+  title: string;
+  members: FamilyMember[];
+};
+
+const FAMILY_GROUPS: FamilyGroup[] = [
+  {
+    id: "park-hyunju",
+    title: "박현주 가족",
+    members: [
+      { name: "박현주", role: "첫째 딸" },
+      { name: "정길호", role: "첫째 사위" },
+      { name: "정다미", role: "손녀" },
+      { name: "정다훈", role: "손자" },
+      { name: "정진욱", role: "손자" },
+      { name: "정유경", role: "손녀" }
+    ]
+  },
+  {
+    id: "park-hyunjung",
+    title: "박현정 가족",
+    members: [
+      { name: "박현정", role: "둘째 딸" },
+      { name: "홍지석", role: "둘째 사위" },
+      { name: "홍성우", role: "손자" }
+    ]
+  },
+  {
+    id: "park-suwon",
+    title: "박수원 가족",
+    members: [{ name: "박수원", role: "아들" }]
+  }
+];
+
 export default function MyPage() {
   const supabaseAvailable = useMemo(() => {
     return Boolean(
@@ -17,10 +57,12 @@ export default function MyPage() {
     [supabaseAvailable]
   );
   const [profileName, setProfileName] = useState("");
+  const [profileMatchName, setProfileMatchName] = useState("");
 
   useEffect(() => {
     if (!supabase) {
       setProfileName("");
+      setProfileMatchName("");
       return;
     }
     let cancelled = false;
@@ -36,10 +78,9 @@ export default function MyPage() {
           ? metadata.name.trim()
           : typeof metadata.nickname === "string"
             ? metadata.nickname.trim()
-            : typeof data.user?.email === "string"
-              ? data.user.email.trim()
-              : "";
+            : "";
       setProfileName(name);
+      setProfileMatchName(name);
     };
 
     void loadProfileName();
@@ -51,6 +92,16 @@ export default function MyPage() {
       data.subscription.unsubscribe();
     };
   }, [supabase]);
+
+  const visibleGroups = useMemo(() => {
+    const targetName = profileMatchName.trim();
+    if (!targetName) {
+      return [];
+    }
+    return FAMILY_GROUPS.filter((group) =>
+      group.members.some((member) => member.name === targetName)
+    );
+  }, [profileMatchName]);
 
   return (
     <AuthGate>
@@ -215,91 +266,25 @@ export default function MyPage() {
             <section className="card profile-card">
               <h2 className="profile-section-title">가족 그룹</h2>
               <div className="profile-family-groups">
-                <div className="profile-family-group">
-                  <h3 className="profile-family-title">박현주 가족</h3>
-                  <ul className="profile-member-list">
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">박현주</span>
-                        <span className="profile-member-role">첫째 딸</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">정길호</span>
-                        <span className="profile-member-role">사위</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">정다미</span>
-                        <span className="profile-member-role">첫째 손녀</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">정다훈</span>
-                        <span className="profile-member-role">첫째 손자</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">정진욱</span>
-                        <span className="profile-member-role">둘째 손자</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">정유경</span>
-                        <span className="profile-member-role">둘째 손녀</span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-                <div className="profile-family-group">
-                  <h3 className="profile-family-title">박현정 가족</h3>
-                  <ul className="profile-member-list">
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">박현정</span>
-                        <span className="profile-member-role">둘째 딸</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">홍지석</span>
-                        <span className="profile-member-role">사위</span>
-                      </div>
-                    </li>
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">홍성우</span>
-                        <span className="profile-member-role">외동 손자</span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-                <div className="profile-family-group">
-                  <h3 className="profile-family-title">박수원 가족</h3>
-                  <ul className="profile-member-list">
-                    <li className="profile-member">
-                      <span className="profile-member-dot" aria-hidden="true" />
-                      <div className="profile-member-info">
-                        <span className="profile-member-name">박수원</span>
-                        <span className="profile-member-role">아들</span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
+                {visibleGroups.map((group) => (
+                  <div key={group.id} className="profile-family-group">
+                    <h3 className="profile-family-title">{group.title}</h3>
+                    <ul className="profile-member-list">
+                      {group.members.map((member) => (
+                        <li
+                          key={`${group.id}-${member.name}`}
+                          className="profile-member"
+                        >
+                          <span className="profile-member-dot" aria-hidden="true" />
+                          <div className="profile-member-info">
+                            <span className="profile-member-name">{member.name}</span>
+                            <span className="profile-member-role">{member.role}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </div>
             </section>
           </div>

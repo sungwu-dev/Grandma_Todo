@@ -32,6 +32,92 @@ type NextSchedule = {
   meta: string;
 };
 
+const HANGUL_BASE = 0xac00;
+const HANGUL_END = 0xd7a3;
+const CHOSUNG_LATIN = [
+  "G",
+  "K",
+  "N",
+  "D",
+  "D",
+  "R",
+  "M",
+  "B",
+  "B",
+  "S",
+  "S",
+  "",
+  "J",
+  "J",
+  "C",
+  "K",
+  "T",
+  "P",
+  "H"
+];
+const JUNGSEONG_LATIN = [
+  "A",
+  "A",
+  "Y",
+  "Y",
+  "E",
+  "E",
+  "Y",
+  "Y",
+  "O",
+  "W",
+  "W",
+  "W",
+  "Y",
+  "W",
+  "W",
+  "W",
+  "W",
+  "Y",
+  "E",
+  "E",
+  "I"
+];
+
+const isHangulSyllable = (char: string) => {
+  const code = char.codePointAt(0) ?? 0;
+  return code >= HANGUL_BASE && code <= HANGUL_END;
+};
+
+const getHangulInitial = (char: string) => {
+  const code = (char.codePointAt(0) ?? 0) - HANGUL_BASE;
+  if (code < 0 || code > HANGUL_END - HANGUL_BASE) {
+    return "";
+  }
+  const initialIndex = Math.floor(code / 588);
+  const vowelIndex = Math.floor((code % 588) / 28);
+  const consonant = CHOSUNG_LATIN[initialIndex] ?? "";
+  if (consonant) {
+    return consonant;
+  }
+  return JUNGSEONG_LATIN[vowelIndex] ?? "";
+};
+
+const getAvatarInitials = (name: string) => {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const hangul = Array.from(trimmed).filter(isHangulSyllable);
+  if (hangul.length > 0) {
+    const target = hangul.slice(-2);
+    const letters = target
+      .map((char) => getHangulInitial(char))
+      .filter((value) => value.length > 0);
+    return letters.join("").slice(0, 2);
+  }
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  }
+  return trimmed.slice(0, 2).toUpperCase();
+};
+
 const FAMILY_GROUPS: FamilyGroup[] = [
   {
     id: "park-hyunju",
@@ -223,6 +309,10 @@ export default function MyPage() {
     return set;
   }, [registeredMembers, profileName]);
 
+  const profileInitials = useMemo(() => {
+    return getAvatarInitials(profileName) || "NA";
+  }, [profileName]);
+
   const visibleGroups = useMemo(() => {
     const targetName = profileName.trim();
     if (!targetName) {
@@ -247,7 +337,7 @@ export default function MyPage() {
           <div className="profile-hero-content">
             <div className="profile-identity">
               <div className="profile-avatar" aria-hidden="true">
-                <span>JE</span>
+                <span>{profileInitials}</span>
               </div>
               <div className="profile-name-group">
                 <span className="profile-label">보호자 프로필</span>

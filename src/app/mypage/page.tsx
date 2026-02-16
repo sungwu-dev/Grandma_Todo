@@ -387,38 +387,7 @@ export default function MyPage() {
               </div>
             </section>
 
-            <section className="card profile-card">
-              <h2 className="profile-section-title">이번 주 목표</h2>
-              <div className="profile-progress-list">
-                <div className="profile-progress">
-                  <div className="profile-progress-head">
-                    <span>약 복용 체크</span>
-                    <span className="profile-progress-count">6/7</span>
-                  </div>
-                  <div className="profile-progress-bar">
-                    <span className="profile-progress-fill" style={{ width: "86%" }} />
-                  </div>
-                </div>
-                <div className="profile-progress">
-                  <div className="profile-progress-head">
-                    <span>물 마시기</span>
-                    <span className="profile-progress-count">5/7</span>
-                  </div>
-                  <div className="profile-progress-bar">
-                    <span className="profile-progress-fill" style={{ width: "71%" }} />
-                  </div>
-                </div>
-                <div className="profile-progress">
-                  <div className="profile-progress-head">
-                    <span>산책</span>
-                    <span className="profile-progress-count">2/3</span>
-                  </div>
-                  <div className="profile-progress-bar">
-                    <span className="profile-progress-fill" style={{ width: "67%" }} />
-                  </div>
-                </div>
-              </div>
-            </section>
+            
 
             <section className="card profile-card">
               <h2 className="profile-section-title">최근 활동</h2>
@@ -449,27 +418,7 @@ export default function MyPage() {
           </div>
 
           <div className="profile-grid-side">
-            <section className="card profile-card">
-              <h2 className="profile-section-title">돌봄 요약</h2>
-              <ul className="profile-summary-list">
-                <li className="profile-summary-item">
-                  <span className="profile-summary-label">이번 주 알림</span>
-                  <span className="profile-summary-value">12건</span>
-                </li>
-                <li className="profile-summary-item">
-                  <span className="profile-summary-label">공유된 일정</span>
-                  <span className="profile-summary-value">8개</span>
-                </li>
-                <li className="profile-summary-item">
-                  <span className="profile-summary-label">가족 참여</span>
-                  <span className="profile-summary-value">3명</span>
-                </li>
-                <li className="profile-summary-item">
-                  <span className="profile-summary-label">마지막 로그인</span>
-                  <span className="profile-summary-value">오늘</span>
-                </li>
-              </ul>
-            </section>
+            
 
             <section className="card profile-card">
               <h2 className="profile-section-title">다음 일정</h2>

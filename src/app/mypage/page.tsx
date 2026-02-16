@@ -23,6 +23,7 @@ type ProfileMeta = {
   relation: string;
   region: string;
   phone: string;
+  birthdate: string;
 };
 
 type NextSchedule = {
@@ -77,7 +78,8 @@ export default function MyPage() {
   const [profileMeta, setProfileMeta] = useState<ProfileMeta>({
     relation: "",
     region: "",
-    phone: ""
+    phone: "",
+    birthdate: ""
   });
   const [nextSchedule, setNextSchedule] = useState<NextSchedule | null>(null);
   const [registeredMembers, setRegisteredMembers] = useState<string[]>([]);
@@ -85,7 +87,7 @@ export default function MyPage() {
   useEffect(() => {
     if (!supabase) {
       setProfileName("");
-      setProfileMeta({ relation: "", region: "", phone: "" });
+      setProfileMeta({ relation: "", region: "", phone: "", birthdate: "" });
       return;
     }
     let cancelled = false;
@@ -108,8 +110,10 @@ export default function MyPage() {
         typeof metadata.region === "string" ? metadata.region.trim() : "";
       const phone =
         typeof metadata.phone === "string" ? metadata.phone.trim() : "";
+      const birthdate =
+        typeof metadata.birthdate === "string" ? metadata.birthdate.trim() : "";
       setProfileName(name);
-      setProfileMeta({ relation, region, phone });
+      setProfileMeta({ relation, region, phone, birthdate });
     };
 
     void loadProfileName();
@@ -248,15 +252,6 @@ export default function MyPage() {
               <div className="profile-name-group">
                 <span className="profile-label">보호자 프로필</span>
                 <h1 className="profile-name">{profileName || "사용자"}</h1>
-                <p className="profile-tagline">
-                  엄마의 일상을 함께 지키는 주 보호자입니다. 이번 주는 약 복용
-                  체크와 산책 루틴에 집중하고 있어요.
-                </p>
-                <div className="profile-chips">
-                  <span className="profile-chip">보호자</span>
-                  <span className="profile-chip">알림 담당</span>
-                  <span className="profile-chip">주 5회 방문</span>
-                </div>
               </div>
             </div>
             <div className="profile-actions">
@@ -294,8 +289,10 @@ export default function MyPage() {
                   </span>
                 </div>
                 <div className="profile-meta-row">
-                  <span className="profile-meta-label">가입일</span>
-                  <span className="profile-meta-value">2024.05.18</span>
+                  <span className="profile-meta-label">생년월일</span>
+                  <span className="profile-meta-value">
+                    {profileMeta.birthdate || "미입력"}
+                  </span>
                 </div>
               </div>
             </section>

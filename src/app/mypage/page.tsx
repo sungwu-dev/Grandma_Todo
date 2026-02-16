@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { DEFAULT_ALERT_MINUTES, TIME_BLOCKS } from "@/lib/constants";
+import { loadSchedule, SCHEDULE_STORAGE_KEY } from "@/lib/storage";
+import { buildBlocks } from "@/lib/time";
 
 type FamilyMember = {
   name: string;
@@ -20,6 +23,12 @@ type ProfileMeta = {
   relation: string;
   region: string;
   phone: string;
+};
+
+type NextSchedule = {
+  time: string;
+  title: string;
+  meta: string;
 };
 
 const FAMILY_GROUPS: FamilyGroup[] = [
@@ -68,6 +77,7 @@ export default function MyPage() {
     region: "",
     phone: ""
   });
+  const [nextSchedule, setNextSchedule] = useState<NextSchedule | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -109,6 +119,53 @@ export default function MyPage() {
     };
   }, [supabase]);
 
+  useEffect(() => {
+    const updateNextSchedule = () => {
+      const stored = loadSchedule();
+      const baseBlocks = stored && stored.length > 0 ? stored : TIME_BLOCKS;
+      const builtBlocks = buildBlocks(baseBlocks);
+
+      if (builtBlocks.length === 0) {
+        setNextSchedule(null);
+        return;
+      }
+
+      const sorted = [...builtBlocks].sort((a, b) => a.startMin - b.startMin);
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      let nextBlock = sorted.find((block) => block.startMin > nowMinutes);
+      let dayOffset = 0;
+
+      if (!nextBlock) {
+        nextBlock = sorted[0];
+        dayOffset = 1;
+      }
+
+      const alertCount =
+        Array.isArray(nextBlock.alertMinutes) && nextBlock.alertMinutes.length > 0
+          ? nextBlock.alertMinutes.length
+          : DEFAULT_ALERT_MINUTES.length;
+      const title = nextBlock.label?.trim() ? nextBlock.label : "예정된 일정";
+      const baseMeta = `알림 ${alertCount}회 예정`;
+      const meta = dayOffset === 1 ? `${baseMeta} · 내일 일정` : baseMeta;
+
+      setNextSchedule({ time: nextBlock.start, title, meta });
+    };
+
+    updateNextSchedule();
+    const timerId = window.setInterval(updateNextSchedule, 60000);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === SCHEDULE_STORAGE_KEY) {
+        updateNextSchedule();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.clearInterval(timerId);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
   const visibleGroups = useMemo(() => {
     const targetName = profileName.trim();
     if (!targetName) {
@@ -118,6 +175,13 @@ export default function MyPage() {
       group.members.some((member) => member.name === targetName)
     );
   }, [profileName]);
+
+  const nextScheduleDisplay =
+    nextSchedule ?? {
+      time: "--:--",
+      title: "등록된 일정 없음",
+      meta: "반복 일정에서 추가해 주세요."
+    };
 
   return (
     <AuthGate>
@@ -270,11 +334,9 @@ export default function MyPage() {
             <section className="card profile-card">
               <h2 className="profile-section-title">다음 일정</h2>
               <div className="profile-next">
-                <div className="profile-next-time">16:30</div>
-                <div className="profile-next-title">가벼운 스트레칭</div>
-                <div className="profile-next-meta">
-                  알림 2회 예정 · 보호자 2명 수신
-                </div>
+                <div className="profile-next-time">{nextScheduleDisplay.time}</div>
+                <div className="profile-next-title">{nextScheduleDisplay.title}</div>
+                <div className="profile-next-meta">{nextScheduleDisplay.meta}</div>
               </div>
               <Link className="profile-link" href="/elder">
                 실시간 화면 보기

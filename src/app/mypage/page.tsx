@@ -1,7 +1,57 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function MyPage() {
+  const supabaseAvailable = useMemo(() => {
+    return Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  }, []);
+  const supabase = useMemo(
+    () => (supabaseAvailable ? createSupabaseBrowserClient() : null),
+    [supabaseAvailable]
+  );
+  const [profileName, setProfileName] = useState("");
+
+  useEffect(() => {
+    if (!supabase) {
+      setProfileName("");
+      return;
+    }
+    let cancelled = false;
+
+    const loadProfileName = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) {
+        return;
+      }
+      const metadata = data.user?.user_metadata ?? {};
+      const name =
+        typeof metadata.name === "string"
+          ? metadata.name.trim()
+          : typeof metadata.nickname === "string"
+            ? metadata.nickname.trim()
+            : typeof data.user?.email === "string"
+              ? data.user.email.trim()
+              : "";
+      setProfileName(name);
+    };
+
+    void loadProfileName();
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      void loadProfileName();
+    });
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   return (
     <AuthGate>
       <div className="page profile-page">
@@ -13,7 +63,7 @@ export default function MyPage() {
               </div>
               <div className="profile-name-group">
                 <span className="profile-label">보호자 프로필</span>
-                <h1 className="profile-name">김지은</h1>
+                <h1 className="profile-name">{profileName || "사용자"}</h1>
                 <p className="profile-tagline">
                   엄마의 일상을 함께 지키는 주 보호자입니다. 이번 주는 약 복용
                   체크와 산책 루틴에 집중하고 있어요.
@@ -32,24 +82,6 @@ export default function MyPage() {
               <Link className="profile-action secondary" href="/calendar">
                 캘린더 보기
               </Link>
-            </div>
-          </div>
-          <div className="profile-stats">
-            <div className="profile-stat">
-              <span className="profile-stat-value">92%</span>
-              <span className="profile-stat-label">완료율</span>
-            </div>
-            <div className="profile-stat">
-              <span className="profile-stat-value">28</span>
-              <span className="profile-stat-label">이번 주 완료</span>
-            </div>
-            <div className="profile-stat">
-              <span className="profile-stat-value">14일</span>
-              <span className="profile-stat-label">연속 기록</span>
-            </div>
-            <div className="profile-stat">
-              <span className="profile-stat-value">3명</span>
-              <span className="profile-stat-label">가족 참여</span>
             </div>
           </div>
         </header>
@@ -182,29 +214,93 @@ export default function MyPage() {
 
             <section className="card profile-card">
               <h2 className="profile-section-title">가족 그룹</h2>
-              <ul className="profile-member-list">
-                <li className="profile-member">
-                  <span className="profile-member-dot" aria-hidden="true" />
-                  <div className="profile-member-info">
-                    <span className="profile-member-name">김순자</span>
-                    <span className="profile-member-role">어머니 · 일정 수신</span>
-                  </div>
-                </li>
-                <li className="profile-member">
-                  <span className="profile-member-dot" aria-hidden="true" />
-                  <div className="profile-member-info">
-                    <span className="profile-member-name">김지은</span>
-                    <span className="profile-member-role">주 보호자</span>
-                  </div>
-                </li>
-                <li className="profile-member">
-                  <span className="profile-member-dot" aria-hidden="true" />
-                  <div className="profile-member-info">
-                    <span className="profile-member-name">박민호</span>
-                    <span className="profile-member-role">요양보호사</span>
-                  </div>
-                </li>
-              </ul>
+              <div className="profile-family-groups">
+                <div className="profile-family-group">
+                  <h3 className="profile-family-title">박현주 가족</h3>
+                  <ul className="profile-member-list">
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">박현주</span>
+                        <span className="profile-member-role">첫째 딸</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">정길호</span>
+                        <span className="profile-member-role">사위</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">정다미</span>
+                        <span className="profile-member-role">첫째 손녀</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">정다훈</span>
+                        <span className="profile-member-role">첫째 손자</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">정진욱</span>
+                        <span className="profile-member-role">둘째 손자</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">정유경</span>
+                        <span className="profile-member-role">둘째 손녀</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div className="profile-family-group">
+                  <h3 className="profile-family-title">박현정 가족</h3>
+                  <ul className="profile-member-list">
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">박현정</span>
+                        <span className="profile-member-role">둘째 딸</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">홍지석</span>
+                        <span className="profile-member-role">사위</span>
+                      </div>
+                    </li>
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">홍성우</span>
+                        <span className="profile-member-role">외동 손자</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div className="profile-family-group">
+                  <h3 className="profile-family-title">박수원 가족</h3>
+                  <ul className="profile-member-list">
+                    <li className="profile-member">
+                      <span className="profile-member-dot" aria-hidden="true" />
+                      <div className="profile-member-info">
+                        <span className="profile-member-name">박수원</span>
+                        <span className="profile-member-role">아들</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </section>
           </div>
         </div>

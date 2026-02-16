@@ -16,6 +16,12 @@ type FamilyGroup = {
   members: FamilyMember[];
 };
 
+type ProfileMeta = {
+  relation: string;
+  region: string;
+  phone: string;
+};
+
 const FAMILY_GROUPS: FamilyGroup[] = [
   {
     id: "park-hyunju",
@@ -57,12 +63,16 @@ export default function MyPage() {
     [supabaseAvailable]
   );
   const [profileName, setProfileName] = useState("");
-  const [profileMatchName, setProfileMatchName] = useState("");
+  const [profileMeta, setProfileMeta] = useState<ProfileMeta>({
+    relation: "",
+    region: "",
+    phone: ""
+  });
 
   useEffect(() => {
     if (!supabase) {
       setProfileName("");
-      setProfileMatchName("");
+      setProfileMeta({ relation: "", region: "", phone: "" });
       return;
     }
     let cancelled = false;
@@ -79,8 +89,14 @@ export default function MyPage() {
           : typeof metadata.nickname === "string"
             ? metadata.nickname.trim()
             : "";
+      const relation =
+        typeof metadata.relation === "string" ? metadata.relation.trim() : "";
+      const region =
+        typeof metadata.region === "string" ? metadata.region.trim() : "";
+      const phone =
+        typeof metadata.phone === "string" ? metadata.phone.trim() : "";
       setProfileName(name);
-      setProfileMatchName(name);
+      setProfileMeta({ relation, region, phone });
     };
 
     void loadProfileName();
@@ -94,14 +110,14 @@ export default function MyPage() {
   }, [supabase]);
 
   const visibleGroups = useMemo(() => {
-    const targetName = profileMatchName.trim();
+    const targetName = profileName.trim();
     if (!targetName) {
       return [];
     }
     return FAMILY_GROUPS.filter((group) =>
       group.members.some((member) => member.name === targetName)
     );
-  }, [profileMatchName]);
+  }, [profileName]);
 
   return (
     <AuthGate>
@@ -141,22 +157,24 @@ export default function MyPage() {
           <div className="profile-grid-main">
             <section className="card profile-card">
               <h2 className="profile-section-title">내 소개</h2>
-              <p className="profile-section-text">
-                일정과 알림을 관리하고, 다른 가족들과 진행 상황을 공유합니다. 쉬운
-                안내를 위해 글씨 크기와 알림 시간을 맞춰 두었어요.
-              </p>
               <div className="profile-meta">
                 <div className="profile-meta-row">
                   <span className="profile-meta-label">관계</span>
-                  <span className="profile-meta-value">딸</span>
+                  <span className="profile-meta-value">
+                    {profileMeta.relation || "미입력"}
+                  </span>
                 </div>
                 <div className="profile-meta-row">
                   <span className="profile-meta-label">지역</span>
-                  <span className="profile-meta-value">서울 마포</span>
+                  <span className="profile-meta-value">
+                    {profileMeta.region || "미입력"}
+                  </span>
                 </div>
                 <div className="profile-meta-row">
                   <span className="profile-meta-label">연락처</span>
-                  <span className="profile-meta-value">010-1234-5678</span>
+                  <span className="profile-meta-value">
+                    {profileMeta.phone || "미입력"}
+                  </span>
                 </div>
                 <div className="profile-meta-row">
                   <span className="profile-meta-label">가입일</span>

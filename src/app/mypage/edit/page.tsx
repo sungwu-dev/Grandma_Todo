@@ -9,6 +9,7 @@ type Notice = { type: "success" | "error"; text: string } | null;
 type ProfileForm = {
   name: string;
   relation: string;
+  region: string;
   phone: string;
   birthdate: string;
 };
@@ -16,6 +17,7 @@ type ProfileForm = {
 const initialForm: ProfileForm = {
   name: "",
   relation: "",
+  region: "",
   phone: "",
   birthdate: ""
 };
@@ -58,6 +60,7 @@ export default function EditProfilePage() {
       setForm({
         name: metadata.name ?? "",
         relation: metadata.relation ?? "",
+        region: metadata.region ?? "",
         phone: metadata.phone ?? "",
         birthdate: metadata.birthdate ?? ""
       });
@@ -93,6 +96,7 @@ export default function EditProfilePage() {
         data: {
           name: form.name.trim(),
           relation: form.relation.trim(),
+          region: form.region.trim(),
           phone: form.phone.trim(),
           birthdate: form.birthdate
         }
@@ -161,7 +165,20 @@ export default function EditProfilePage() {
           </div>
           <div className="signup-field">
             <label className="field">
-              <span>전화번호</span>
+              <span>지역</span>
+              <input
+                className="input"
+                type="text"
+                value={form.region}
+                onChange={(event) => updateField("region", event.target.value)}
+                placeholder="서울 마포"
+                disabled={formDisabled}
+              />
+            </label>
+          </div>
+          <div className="signup-field">
+            <label className="field">
+              <span>연락처</span>
               <input
                 className="input"
                 type="tel"

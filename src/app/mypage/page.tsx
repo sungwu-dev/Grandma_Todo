@@ -34,7 +34,7 @@ type NextSchedule = {
 const FAMILY_GROUPS: FamilyGroup[] = [
   {
     id: "park-hyunju",
-    title: "박현주 가족",
+    title: "첫째 딸 가족",
     members: [
       { name: "박현주", role: "첫째 딸" },
       { name: "정길호", role: "첫째 사위" },
@@ -46,7 +46,7 @@ const FAMILY_GROUPS: FamilyGroup[] = [
   },
   {
     id: "park-hyunjung",
-    title: "박현정 가족",
+    title: "둘째 딸 가족",
     members: [
       { name: "박현정", role: "둘째 딸" },
       { name: "홍지석", role: "둘째 사위" },
@@ -55,10 +55,12 @@ const FAMILY_GROUPS: FamilyGroup[] = [
   },
   {
     id: "park-suwon",
-    title: "박수원 가족",
+    title: "아들 가족",
     members: [{ name: "박수원", role: "아들" }]
   }
 ];
+
+const REGISTERED_MEMBERS_STORAGE_KEY = "registered_family_members_v1";
 
 export default function MyPage() {
   const supabaseAvailable = useMemo(() => {
@@ -78,6 +80,7 @@ export default function MyPage() {
     phone: ""
   });
   const [nextSchedule, setNextSchedule] = useState<NextSchedule | null>(null);
+  const [registeredMembers, setRegisteredMembers] = useState<string[]>([]);
 
   useEffect(() => {
     if (!supabase) {
@@ -118,6 +121,48 @@ export default function MyPage() {
       data.subscription.unsubscribe();
     };
   }, [supabase]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const raw = window.localStorage.getItem(REGISTERED_MEMBERS_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const normalized = parsed
+          .map((item) => String(item).trim())
+          .filter((item) => item.length > 0);
+        setRegisteredMembers(normalized);
+      }
+    } catch {
+      // Ignore malformed storage values.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const name = profileName.trim();
+    if (!name) {
+      return;
+    }
+    setRegisteredMembers((prev) => {
+      if (prev.includes(name)) {
+        return prev;
+      }
+      const next = [...prev, name];
+      window.localStorage.setItem(
+        REGISTERED_MEMBERS_STORAGE_KEY,
+        JSON.stringify(next)
+      );
+      return next;
+    });
+  }, [profileName]);
 
   useEffect(() => {
     const updateNextSchedule = () => {
@@ -165,6 +210,14 @@ export default function MyPage() {
       window.removeEventListener("storage", handleStorage);
     };
   }, []);
+
+  const registeredNameSet = useMemo(() => {
+    const set = new Set(registeredMembers);
+    if (profileName.trim()) {
+      set.add(profileName.trim());
+    }
+    return set;
+  }, [registeredMembers, profileName]);
 
   const visibleGroups = useMemo(() => {
     const targetName = profileName.trim();
@@ -350,18 +403,22 @@ export default function MyPage() {
                   <div key={group.id} className="profile-family-group">
                     <h3 className="profile-family-title">{group.title}</h3>
                     <ul className="profile-member-list">
-                      {group.members.map((member) => (
-                        <li
-                          key={`${group.id}-${member.name}`}
-                          className="profile-member"
-                        >
-                          <span className="profile-member-dot" aria-hidden="true" />
-                          <div className="profile-member-info">
-                            <span className="profile-member-name">{member.name}</span>
-                            <span className="profile-member-role">{member.role}</span>
-                          </div>
-                        </li>
-                      ))}
+                      {group.members.map((member) => {
+                        const isRegistered = registeredNameSet.has(member.name);
+                        return (
+                          <li
+                            key={`${group.id}-${member.name}`}
+                            className="profile-member"
+                            data-registered={isRegistered ? "true" : "false"}
+                          >
+                            <span className="profile-member-dot" aria-hidden="true" />
+                            <div className="profile-member-info">
+                              <span className="profile-member-name">{member.name}</span>
+                              <span className="profile-member-role">{member.role}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))}

@@ -1319,6 +1319,11 @@ input {
   box-shadow: 0 0 0 3px var(--profile-accent-soft);
 }
 
+.profile-member[data-registered="false"] .profile-member-dot {
+  background: #b7b7b7;
+  box-shadow: 0 0 0 3px rgba(183, 183, 183, 0.35);
+}
+
 .profile-member-info {
   display: grid;
   gap: 2px;

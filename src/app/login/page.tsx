@@ -2,6 +2,7 @@
 
 import {
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -17,7 +18,9 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Notice = { type: "success" | "error"; text: string } | null;
-type AuthSessionData = { session: { user: { id: string } } | null };
+type AuthSessionData = {
+  session: { user: { id: string; email?: string | null } } | null;
+};
 type SignupForm = {
   name: string;
   relation: string;
@@ -69,6 +72,7 @@ const initialBirthdateParts: BirthdateParts = {
   day: ""
 };
 const GRANDMA_BIRTHCODE = "490818";
+const GRANDMA_EMAIL = "sook490818@gmail.com";
 const RELATION_OPTIONS = [
   "큰 딸",
   "작은 딸",
@@ -78,6 +82,12 @@ const RELATION_OPTIONS = [
   "손자",
   "손녀"
 ];
+
+const normalizeEmail = (value: string | null | undefined) =>
+  (value ?? "").trim().toLowerCase();
+
+const isGrandmaEmail = (email: string | null | undefined) =>
+  normalizeEmail(email) === GRANDMA_EMAIL;
 
 const parseDateInput = (value: string) => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -286,6 +296,11 @@ function LoginPageContent() {
   const birthdateRefs = useRef<Array<HTMLInputElement | null>>([]);
   const loginRevealHandlers = createRevealHandlers(setLoginPasswordVisible);
   const signupRevealHandlers = createRevealHandlers(setSignupPasswordVisible);
+  const resolveRedirect = useCallback(
+    (targetEmail: string | null | undefined) =>
+      isGrandmaEmail(targetEmail) ? "/elder" : redirectTo,
+    [redirectTo]
+  );
   useEffect(() => {
     if (!isSignup) {
       return;
@@ -303,11 +318,12 @@ function LoginPageContent() {
       return;
     }
     supabase.auth.getSession().then(({ data }: { data: AuthSessionData }) => {
-      if (data.session) {
-        router.replace(redirectTo);
+      const session = data.session;
+      if (session) {
+        router.replace(resolveRedirect(session.user.email));
       }
     });
-  }, [supabase, router, redirectTo]);
+  }, [supabase, router, redirectTo, resolveRedirect]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -330,7 +346,7 @@ function LoginPageContent() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmed,
         password
       });
@@ -338,7 +354,8 @@ function LoginPageContent() {
         setNotice({ type: "error", text: error.message });
         return;
       }
-      router.replace(redirectTo);
+      const targetEmail = data.user?.email ?? data.session?.user?.email ?? trimmed;
+      router.replace(resolveRedirect(targetEmail));
     } catch {
       setNotice({ type: "error", text: "로그인에 실패했습니다." });
     } finally {

@@ -267,8 +267,8 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSignup = searchParams.get("mode") === "signup";
-  const rawRedirect = searchParams.get("redirectedFrom") || "/recurring_sch";
-  const redirectTo = rawRedirect.startsWith("/") ? rawRedirect : "/recurring_sch";
+  const rawRedirect = searchParams.get("redirectedFrom") || "/";
+  const redirectTo = rawRedirect.startsWith("/") ? rawRedirect : "/";
   const supabaseAvailable = useMemo(() => {
     return Boolean(
       process.env.NEXT_PUBLIC_SUPABASE_URL &&

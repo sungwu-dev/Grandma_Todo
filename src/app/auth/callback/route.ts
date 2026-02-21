@@ -5,8 +5,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const redirectedFrom = searchParams.get("redirectedFrom");
-  const safeRedirect =
-    redirectedFrom && redirectedFrom.startsWith("/") ? redirectedFrom : "/recurring_sch";
+  const safeRedirect = redirectedFrom && redirectedFrom.startsWith("/") ? redirectedFrom : "/";
 
   if (!code) {
     return NextResponse.redirect(new URL("/login", request.url));

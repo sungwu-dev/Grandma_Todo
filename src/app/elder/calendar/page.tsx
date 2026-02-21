@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
-import Container from "@/components/ui/container";
 import IconButton from "@/components/ui/icon-button";
 import AgendaView from "@/components/ui/agenda-view";
 import WeekGrid from "@/components/ui/week-grid";
@@ -16,8 +16,6 @@ const MAX_EVENTS_PER_DAY = 4;
 
 const formatShortDate = (date: Date) =>
   `${pad2(date.getMonth() + 1)}.${pad2(date.getDate())}`;
-
-const formatTitleDate = (date: Date) => formatShortDate(date);
 
 const sortEvents = (list: CalendarEvent[]) =>
   [...list].sort((a, b) => {
@@ -83,8 +81,17 @@ function ElderCalendarContent() {
   } | null>(null);
 
   useEffect(() => {
-    // localStorage: events_v1 (CalendarEvent 목록)
     setEvents(loadEvents());
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "events_v1") {
+        setEvents(loadEvents());
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   useEffect(() => {
@@ -130,6 +137,7 @@ function ElderCalendarContent() {
   }, [weekStart]);
   const todayKey = getDateKey(today);
   const weekTitle = "이번 주 일정";
+
   const viewDays = useMemo(() => {
     return weekDates.map((date) => {
       const dateKey = getDateKey(date);
@@ -140,7 +148,7 @@ function ElderCalendarContent() {
       return {
         dateKey,
         weekdayLabel: WEEK_LABELS[date.getDay()],
-        dateLabel: formatTitleDate(date),
+        dateLabel: formatShortDate(date),
         isToday: dateKey === todayKey,
         events: visibleEvents.map((event) => ({
           id: event.id,
@@ -156,40 +164,70 @@ function ElderCalendarContent() {
     });
   }, [weekDates, events, todayKey]);
 
+  const weekHasEvents = useMemo(
+    () => viewDays.some((day) => day.events.length > 0 || day.hiddenCount > 0),
+    [viewDays]
+  );
+
   return (
-    <div className="bg-[var(--page-bg)]">
-      <Container mode="elder" className="min-h-[100dvh] py-4 md:py-6 lg:py-8">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-          <header className="rounded-xl border border-gray-200 bg-white p-3 md:p-4" aria-label="주간 이동">
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-[minmax(0,140px)_minmax(0,1fr)_minmax(0,140px)] md:items-center md:gap-3">
-              <IconButton
-                icon="<"
-                label="이전 주"
-                mobileLabel="이전"
-                className="w-full text-sm md:h-12 md:w-full md:px-0"
-                onClick={() => setWeekOffset((prev) => prev - 1)}
-              />
-              <div className="col-span-2 text-center md:col-span-1">
+    <div className="min-h-[100dvh] bg-gray-50">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col gap-3 py-3 md:gap-4 md:py-4">
+        <section className="mx-auto w-full max-w-[1080px] px-4 md:px-6 lg:px-8">
+          <header className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm md:p-4" aria-label="주간 이동">
+            <div className="grid grid-cols-[56px_1fr_56px] items-center gap-3">
+              <div className="flex items-center justify-center">
+                <IconButton
+                  icon="<"
+                  label="이전 주"
+                  className="h-12 w-12 rounded-lg p-0 text-xl md:h-14 md:w-14"
+                  onClick={() => setWeekOffset((prev) => prev - 1)}
+                />
+              </div>
+              <div className="text-center">
                 <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{weekTitle}</h1>
                 <p className="mt-1 text-base font-medium text-gray-600">{rangeText}</p>
               </div>
-              <IconButton
-                icon=">"
-                label="다음 주"
-                mobileLabel="다음"
-                className="w-full text-sm md:h-12 md:w-full md:px-0"
-                onClick={() => setWeekOffset((prev) => prev + 1)}
-              />
+              <div className="flex items-center justify-center">
+                <IconButton
+                  icon=">"
+                  label="다음 주"
+                  className="h-12 w-12 rounded-lg p-0 text-xl md:h-14 md:w-14"
+                  onClick={() => setWeekOffset((prev) => prev + 1)}
+                />
+              </div>
             </div>
           </header>
+        </section>
 
-          <div className="lg:hidden">
-            <AgendaView days={viewDays} />
-          </div>
-
-          <WeekGrid days={viewDays} className="hidden lg:grid" />
-        </div>
-      </Container>
+        <section className="mx-auto w-full max-w-[1080px] flex-1 px-4 pb-3 md:px-6 md:pb-4 lg:px-8">
+          {weekHasEvents ? (
+            <>
+              <div className="lg:hidden">
+                <AgendaView days={viewDays} />
+              </div>
+              <WeekGrid days={viewDays} className="hidden lg:grid" />
+            </>
+          ) : (
+            <div className="flex h-full min-h-[260px] items-center justify-center">
+              <div className="w-full rounded-xl border border-gray-200 bg-white px-6 py-10 text-center shadow-sm md:max-w-2xl md:py-12">
+                <p className="text-3xl font-bold text-gray-900 md:text-4xl">일정이 없어요</p>
+                <p className="mt-3 text-base font-medium text-gray-600 md:text-lg">
+                  이번 주에 등록된 일정이 없습니다.
+                </p>
+                <p className="mt-2 text-sm font-medium text-gray-500 md:text-base">
+                  가족 모드에서 일정을 추가하면 여기에서 바로 확인할 수 있어요.
+                </p>
+                <Link
+                  href="/calendar"
+                  className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg border border-gray-200 bg-white px-5 text-base font-semibold text-gray-700 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                >
+                  일정 추가하러 가기
+                </Link>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

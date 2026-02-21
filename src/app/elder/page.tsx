@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AuthGate from "@/components/auth-gate";
-import Container from "@/components/ui/container";
 import PrimaryButton from "@/components/ui/primary-button";
 import IconButton from "@/components/ui/icon-button";
 import {
@@ -602,18 +601,25 @@ function ElderPageContent() {
         ? "text-3xl font-bold leading-tight md:text-[3.5rem]"
         : "text-3xl font-bold leading-tight md:text-6xl";
   const nowLabelText = isPreview ? "미리보기" : activeEvent ? "특별 일정" : "지금 할 일";
+  const dayProgressPercent = (() => {
+    const startOfDay = new Date(displayDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const elapsed = displayDate.getTime() - startOfDay.getTime();
+    const ratio = elapsed / (24 * 60 * 60 * 1000);
+    return Math.max(0, Math.min(100, ratio * 100));
+  })();
 
   return (
-    <div className="bg-[var(--page-bg)]">
-      <Container mode="elder" className="min-h-[100dvh] py-4 md:py-6 lg:py-8">
-        <div className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col gap-4 md:gap-6">
-          <header className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-center md:px-6 md:py-5">
-            <div id="dateText" className="text-sm font-semibold text-gray-600">
+    <div className="min-h-[100dvh] bg-gray-50">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col gap-3 py-3 md:h-[100dvh] md:overflow-hidden md:gap-4 md:py-4">
+        <header className="mx-auto w-full max-w-[920px] px-4 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-center shadow-sm md:px-6 md:py-4">
+            <div id="dateText" className="text-lg font-semibold text-gray-700 md:text-xl">
               {dateLine}
             </div>
             <div
               id="timeText"
-              className="mt-1 text-3xl font-bold tracking-tight text-gray-900 md:text-5xl"
+              className="mt-1 text-5xl font-extrabold leading-tight tracking-tight text-gray-900 md:text-6xl lg:text-7xl"
               aria-live="polite"
             >
               {timeLine}
@@ -628,83 +634,91 @@ function ElderPageContent() {
                 {audioEnabled ? "소리 켜짐" : "소리 켜기"}
               </button>
             </div>
-          </header>
+          </div>
+        </header>
 
-          <main className="flex-1">
-            <div className="grid gap-2 md:grid-cols-[56px_minmax(0,1fr)_56px] md:items-stretch md:gap-4">
-              <div className="hidden md:flex">
-                <IconButton
-                  icon="<"
-                  label="이전 시간대 미리보기"
-                  className="h-full w-full px-0"
-                  onClick={() => handlePreview(-1)}
-                />
-              </div>
+        <section className="mx-auto w-full max-w-[920px] px-4 md:flex md:flex-1 md:items-center md:px-6 lg:px-8">
+          <div className="grid w-full grid-cols-[56px_1fr_56px] items-center gap-3 md:gap-4">
+            <div className="flex items-center justify-center">
+              <IconButton
+                icon="<"
+                label="이전 시간대 미리보기"
+                className="h-12 w-12 rounded-lg p-0 text-xl md:h-14 md:w-14"
+                onClick={() => handlePreview(-1)}
+              />
+            </div>
 
-              <section
+            <div className="flex flex-col gap-4">
+              <article
+                id="taskArea"
                 className={[
-                  "rounded-xl border border-gray-200 bg-white px-5 py-8 text-center",
-                  "md:px-8 md:py-10",
+                  "w-full rounded-xl border border-gray-200 bg-white px-5 py-6 text-center shadow-sm md:px-8 md:py-8",
                   isPreview ? "border-gray-300" : ""
                 ].join(" ")}
               >
-                <div className="text-sm font-semibold text-gray-600">{nowLabelText}</div>
+                <div className="h-1.5 w-full rounded-full bg-gray-200" aria-hidden="true">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${dayProgressPercent.toFixed(2)}%`,
+                      backgroundColor: theme.color,
+                      opacity: 0.9
+                    }}
+                  />
+                </div>
+                <div className="mt-3 text-sm font-semibold text-gray-600">{nowLabelText}</div>
                 <div id="taskText" className={`mt-2 text-gray-900 ${taskTitleClass}`} aria-live="polite">
                   {displayTaskLabel}
                 </div>
                 <div className="mt-4 border-t border-gray-200 pt-3 text-base font-medium text-gray-600">
                   {taskMeta}
                 </div>
-              </section>
+              </article>
 
-              <div className="hidden md:flex">
-                <IconButton
-                  icon=">"
-                  label="다음 시간대 미리보기"
-                  className="h-full w-full px-0"
-                  onClick={() => handlePreview(1)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 md:hidden">
-                <PrimaryButton
-                  variant="neutral"
-                  className="min-h-12 text-base"
-                  onClick={() => handlePreview(-1)}
-                >
-                  이전
-                </PrimaryButton>
-                <PrimaryButton
-                  variant="neutral"
-                  className="min-h-12 text-base"
-                  onClick={() => handlePreview(1)}
-                >
-                  다음
-                </PrimaryButton>
-              </div>
+              <PrimaryButton
+                id="doneBtn"
+                variant="primary"
+                aria-pressed={doneChecked}
+                aria-hidden={hideDone ? "true" : undefined}
+                aria-disabled={doneDisabled ? "true" : undefined}
+                disabled={doneDisabled}
+                onClick={handleDoneClick}
+                className={[
+                  "w-full min-h-14 rounded-full py-3 text-xl md:min-h-16 md:py-4 md:text-2xl",
+                  doneChecked ? "border-amber-800 bg-amber-800" : "",
+                  hideDone ? "invisible pointer-events-none" : ""
+                ].join(" ")}
+              >
+                <span className="inline-flex items-center justify-center gap-3">
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/20 leading-none ring-1 ring-white/50">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className={`h-5 w-5 text-white transition-opacity ${doneChecked ? "opacity-100" : "opacity-0"}`}
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                  <span>다 했어요!</span>
+                </span>
+              </PrimaryButton>
             </div>
-          </main>
 
-          <footer>
-            <PrimaryButton
-              id="doneBtn"
-              variant="primary"
-              aria-pressed={doneChecked}
-              aria-hidden={hideDone ? "true" : undefined}
-              aria-disabled={doneDisabled ? "true" : undefined}
-              disabled={doneDisabled}
-              onClick={handleDoneClick}
-              className={[
-                "w-full min-h-14 rounded-full py-4 text-xl md:min-h-16 md:text-2xl",
-                doneChecked ? "border-amber-800 bg-amber-800" : "",
-                hideDone ? "invisible pointer-events-none" : ""
-              ].join(" ")}
-            >
-              다 했어요!
-            </PrimaryButton>
-          </footer>
-        </div>
-      </Container>
+            <div className="flex items-center justify-center">
+              <IconButton
+                icon=">"
+                label="다음 시간대 미리보기"
+                className="h-12 w-12 rounded-lg p-0 text-xl md:h-14 md:w-14"
+                onClick={() => handlePreview(1)}
+              />
+            </div>
+          </div>
+        </section>
 
       {flashOn && (
         <div
@@ -748,6 +762,7 @@ function ElderPageContent() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

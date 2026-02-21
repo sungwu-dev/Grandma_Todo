@@ -144,7 +144,11 @@ function ElderPageContent() {
         return minutes;
       }
     }
-    return displayDate.getHours() * 60 + displayDate.getMinutes();
+    return (
+      displayDate.getHours() * 60 +
+      displayDate.getMinutes() +
+      displayDate.getSeconds() / 60
+    );
   }, [previewUsesTaskTime, displayBlock, displayDate]);
 
   const activeEvent = useMemo(() => {
@@ -601,13 +605,10 @@ function ElderPageContent() {
         ? "text-3xl font-bold leading-tight md:text-[3.5rem]"
         : "text-3xl font-bold leading-tight md:text-6xl";
   const nowLabelText = isPreview ? "미리보기" : activeEvent ? "특별 일정" : "지금 할 일";
-  const dayProgressPercent = (() => {
-    const startOfDay = new Date(displayDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const elapsed = displayDate.getTime() - startOfDay.getTime();
-    const ratio = elapsed / (24 * 60 * 60 * 1000);
-    return Math.max(0, Math.min(100, ratio * 100));
-  })();
+  const dayProgressPercent = Math.max(
+    0,
+    Math.min(100, (displayMinutes / DAY_MINUTES) * 100)
+  );
 
   return (
     <div className="min-h-[100dvh] bg-gray-50">

@@ -132,6 +132,13 @@ function ElderPageContent() {
   const [showHomeButton, setShowHomeButton] = useState(true);
   const [homeButtonReady, setHomeButtonReady] = useState(false);
 
+  useEffect(() => {
+    document.body.classList.add("elder-mode");
+    return () => {
+      document.body.classList.remove("elder-mode");
+    };
+  }, []);
+
   const blocks = useMemo(() => buildBlocks(timeBlocks), [timeBlocks]);
   const displayIndex = previewIndex ?? currentIndex;
   const displayBlock = blocks[displayIndex] ?? blocks[0];
@@ -680,12 +687,8 @@ function ElderPageContent() {
         <div className="mt-3 flex justify-center">
           <button
             type="button"
-            className="rounded-full border-2 px-4 py-2 text-sm font-semibold shadow-sm"
-            style={{
-              borderColor: "var(--theme)",
-              backgroundColor: audioEnabled ? "var(--theme)" : "var(--surface-strong)",
-              color: audioEnabled ? "#1b1b1b" : "var(--text-main)"
-            }}
+            className="elder-audio-toggle"
+            data-active={audioEnabled ? "true" : undefined}
             onClick={handleAudioToggle}
           >
             {audioEnabled ? "🔊 소리 켜짐" : "🔊 소리 켜기"}
@@ -697,9 +700,11 @@ function ElderPageContent() {
         <button
           id="prevBtn"
           className="nav-btn prev"
-          aria-label="이전 시간대 미리보기"
+          aria-label="?? ?? ??"
           onClick={() => handlePreview(-1)}
-        />
+        >
+          <span className="nav-btn-label">?? ??</span>
+        </button>
 
         <div
           className={`task-area ${isPreview ? "previewing" : ""}`}
@@ -720,9 +725,11 @@ function ElderPageContent() {
         <button
           id="nextBtn"
           className="nav-btn next"
-          aria-label="다음 시간대 미리보기"
+          aria-label="?? ?? ??"
           onClick={() => handlePreview(1)}
-        />
+        >
+          <span className="nav-btn-label">?? ??</span>
+        </button>
       </main>
 
       <footer className="bottom">

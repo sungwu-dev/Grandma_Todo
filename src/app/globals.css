@@ -332,6 +332,14 @@ input {
   padding-inline: clamp(8px, 2vw, 20px);
 }
 
+.elder-home .middle {
+  grid-template-columns: minmax(110px, 130px) minmax(320px, 760px) minmax(110px, 130px);
+  column-gap: clamp(10px, 2.2vw, 24px);
+  width: 100%;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
 .task-area {
   text-align: center;
   padding: clamp(28px, 3.5vw, 44px) clamp(24px, 4vw, 56px);
@@ -342,6 +350,12 @@ input {
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.elder-home .task-area {
+  min-height: clamp(240px, 34vh, 360px);
+  display: grid;
+  align-content: center;
 }
 
 .task-area::before {
@@ -375,10 +389,22 @@ input {
 }
 
 .now-label {
-  font-size: clamp(18px, 2.4vw, 30px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-inline: auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--theme) 20%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--theme) 45%, #ffffff);
+  font-size: clamp(16px, 2.1vw, 26px);
   color: var(--text-muted);
   margin-bottom: 12px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  font-weight: 700;
 }
 
 .task-area.previewing .now-label {
@@ -389,9 +415,9 @@ input {
 .task-text {
   font-size: clamp(44px, 7.2vw, 94px);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.16;
   margin-bottom: 12px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   white-space: normal;
   word-break: keep-all;
   overflow-wrap: break-word;
@@ -408,8 +434,11 @@ input {
 }
 
 .task-meta {
-  min-height: 36px;
-  font-size: clamp(20px, 2.6vw, 34px);
+  min-height: 40px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: clamp(19px, 2.4vw, 30px);
   color: var(--text-muted);
 }
 
@@ -424,6 +453,8 @@ input {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 4px;
   box-shadow: 0 14px 26px rgba(0, 0, 0, 0.12);
 }
 
@@ -438,20 +469,20 @@ input {
 }
 
 .nav-btn::before {
-  content: "";
-  width: 0;
-  height: 0;
-  border-style: solid;
+  content: none;
 }
 
-.nav-btn.prev::before {
-  border-width: 22px 30px 22px 0;
-  border-color: transparent var(--theme) transparent transparent;
+.nav-btn-arrow {
+  line-height: 1;
+  font-size: clamp(30px, 3.2vw, 42px);
+  font-weight: 700;
+  color: var(--theme);
 }
 
-.nav-btn.next::before {
-  border-width: 22px 0 22px 30px;
-  border-color: transparent transparent transparent var(--theme);
+.nav-btn-text {
+  font-size: clamp(16px, 1.4vw, 20px);
+  font-weight: 700;
+  color: var(--text-muted);
 }
 
 .nav-btn:active {
@@ -1872,21 +1903,55 @@ input {
 .elder-top-actions {
   position: static;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  gap: clamp(8px, 1.6vw, 14px);
+  max-width: min(560px, 100%);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: clamp(8px, 1.4vw, 12px);
   margin-bottom: clamp(8px, 1.8vw, 16px);
 }
 
 .elder-top-actions .elder-calendar-fab {
   position: static;
   margin: 0;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 .elder-top-actions .elder-calendar-fab-right {
   margin-left: 0;
+}
+
+.elder-top-actions .elder-calendar-fab:only-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(320px, 100%);
+}
+
+.elder-audio-btn {
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--text-main);
+  padding: 10px 20px;
+  min-height: 54px;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+}
+
+.elder-audio-btn[data-active="true"] {
+  background: var(--theme);
+  border-color: var(--theme);
+  color: #1b1b1b;
+}
+
+.elder-audio-btn:focus-visible {
+  outline: 3px solid rgba(0, 0, 0, 0.2);
+  outline: 3px solid color-mix(in srgb, var(--theme) 45%, #000000);
+  outline-offset: 2px;
 }
 
 .calendar-form {
@@ -2397,8 +2462,26 @@ input {
   }
 
   .elder-home .middle {
-    grid-template-columns: 1fr;
-    row-gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "task task"
+      "prev next";
+    row-gap: 14px;
+    column-gap: 10px;
+  }
+
+  .elder-home .task-area {
+    grid-area: task;
+  }
+
+  .elder-home .nav-btn.prev {
+    grid-area: prev;
+    justify-self: stretch;
+  }
+
+  .elder-home .nav-btn.next {
+    grid-area: next;
+    justify-self: stretch;
   }
 
   .profile-hero-content {
@@ -2500,27 +2583,14 @@ input {
   }
 
   .elder-top-actions {
-    position: static;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
+    max-width: 100%;
     gap: 10px;
     margin-bottom: 6px;
   }
 
-  .elder-top-actions .elder-calendar-fab {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .elder-top-actions .elder-calendar-fab-right {
-    margin-left: 0;
-  }
-
   .elder-top-actions .elder-calendar-fab:only-child {
     grid-column: 1 / -1;
-    justify-self: end;
+    justify-self: center;
     width: min(360px, 100%);
   }
 
@@ -2643,10 +2713,21 @@ input {
     row-gap: 20px;
   }
 
+  .elder-home .middle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "task task"
+      "prev next";
+    row-gap: 12px;
+    column-gap: 10px;
+  }
+
   .nav-btn {
     width: 100%;
-    height: 84px;
-    border-radius: 22px;
+    height: 72px;
+    border-radius: 18px;
+    flex-direction: row;
+    gap: 8px;
   }
 
   .nav-btn.prev,
@@ -2655,18 +2736,12 @@ input {
     justify-self: stretch;
   }
 
-  .nav-btn.prev::before,
-  .nav-btn.next::before {
-    border-width: 18px 26px 18px 26px;
-    border-color: transparent;
+  .nav-btn-arrow {
+    font-size: 30px;
   }
 
-  .nav-btn.prev::before {
-    border-right-color: var(--theme);
-  }
-
-  .nav-btn.next::before {
-    border-left-color: var(--theme);
+  .nav-btn-text {
+    font-size: 18px;
   }
 
   .bottom {

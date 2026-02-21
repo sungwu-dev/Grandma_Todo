@@ -641,7 +641,8 @@ function ElderPageContent() {
     }
   };
 
-  const taskLabel = activeEvent ? activeEvent.label : displayBlock?.label ?? "";
+  const taskLabel = (activeEvent ? activeEvent.label : displayBlock?.label ?? "").trim();
+  const displayTaskLabel = taskLabel || "일정이 없어요";
   const taskMeta = activeEvent
     ? (() => {
         const rangeText =
@@ -659,7 +660,7 @@ function ElderPageContent() {
     : displayBlock
       ? `시간 ${displayBlock.start} ~ ${displayBlock.end}`
       : "";
-  const textLength = taskLabel.replace(/\s/g, "").length;
+  const textLength = displayTaskLabel.replace(/\s/g, "").length;
   const taskSizeClass =
     textLength >= 26 ? "task-text--xlong" : textLength >= 18 ? "task-text--long" : "";
   const nowLabelText = isPreview ? "미리보기" : activeEvent ? "특별 일정" : "지금 할 일";
@@ -687,12 +688,8 @@ function ElderPageContent() {
         <div className="mt-3 flex justify-center">
           <button
             type="button"
-            className="rounded-full border-2 px-4 py-2 text-sm font-semibold shadow-sm"
-            style={{
-              borderColor: "var(--theme)",
-              backgroundColor: audioEnabled ? "var(--theme)" : "var(--surface-strong)",
-              color: audioEnabled ? "#1b1b1b" : "var(--text-main)"
-            }}
+            className="elder-audio-btn"
+            data-active={audioEnabled ? "true" : undefined}
             onClick={handleAudioToggle}
           >
             {audioEnabled ? "🔊 소리 켜짐" : "🔊 소리 켜기"}
@@ -706,7 +703,12 @@ function ElderPageContent() {
           className="nav-btn prev"
           aria-label="이전 시간대 미리보기"
           onClick={() => handlePreview(-1)}
-        />
+        >
+          <span className="nav-btn-arrow" aria-hidden="true">
+            ←
+          </span>
+          <span className="nav-btn-text">이전</span>
+        </button>
 
         <div
           className={`task-area ${isPreview ? "previewing" : ""}`}
@@ -717,7 +719,7 @@ function ElderPageContent() {
             {nowLabelText}
           </div>
           <div id="taskText" className={`task-text ${taskSizeClass}`} aria-live="polite">
-            {taskLabel}
+            {displayTaskLabel}
           </div>
           <div id="taskMeta" className="task-meta">
             {taskMeta}
@@ -729,7 +731,12 @@ function ElderPageContent() {
           className="nav-btn next"
           aria-label="다음 시간대 미리보기"
           onClick={() => handlePreview(1)}
-        />
+        >
+          <span className="nav-btn-arrow" aria-hidden="true">
+            →
+          </span>
+          <span className="nav-btn-text">다음</span>
+        </button>
       </main>
 
       <footer className="bottom">

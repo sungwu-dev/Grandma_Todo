@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AuthGate from "@/components/auth-gate";
+import Container from "@/components/ui/container";
+import IconButton from "@/components/ui/icon-button";
+import AgendaView from "@/components/ui/agenda-view";
+import WeekGrid from "@/components/ui/week-grid";
 import { WEEKDAY_THEMES } from "@/lib/constants";
 import type { CalendarEvent } from "@/lib/types";
 import { addDays, getDateKey, pad2, toMinutes } from "@/lib/time";
@@ -126,79 +130,66 @@ function ElderCalendarContent() {
   }, [weekStart]);
   const todayKey = getDateKey(today);
   const weekTitle = "이번 주 일정";
+  const viewDays = useMemo(() => {
+    return weekDates.map((date) => {
+      const dateKey = getDateKey(date);
+      const dayEvents = sortEvents(
+        events.filter((event) => eventMatchesDate(event, dateKey))
+      );
+      const visibleEvents = dayEvents.slice(0, MAX_EVENTS_PER_DAY);
+      return {
+        dateKey,
+        weekdayLabel: WEEK_LABELS[date.getDay()],
+        dateLabel: formatTitleDate(date),
+        isToday: dateKey === todayKey,
+        events: visibleEvents.map((event) => ({
+          id: event.id,
+          label: event.label,
+          timeText: formatEventTime(event),
+          noteText:
+            event.startDate !== event.endDate
+              ? `기간 ${event.startDate} ~ ${event.endDate}`
+              : undefined
+        })),
+        hiddenCount: Math.max(0, dayEvents.length - visibleEvents.length)
+      };
+    });
+  }, [weekDates, events, todayKey]);
 
   return (
-    <div className="page elder-week elder-week-screen">
-      <header className="elder-week-top" aria-label="주간 이동">
-        <div className="elder-week-nav">
-          <button
-            type="button"
-            className="elder-week-arrow elder-week-arrow--prev"
-            onClick={() => setWeekOffset((prev) => prev - 1)}
-            aria-label="이전 주"
-          >
-            &lt;
-          </button>
-          <div className="elder-week-title-wrap">
-            <div className="elder-week-title">{weekTitle}</div>
-            <div className="elder-week-range">{rangeText}</div>
-          </div>
-          <button
-            type="button"
-            className="elder-week-arrow elder-week-arrow--next"
-            onClick={() => setWeekOffset((prev) => prev + 1)}
-            aria-label="다음 주"
-          >
-            &gt;
-          </button>
-        </div>
-      </header>
-
-      <section className="elder-week-board" aria-live="polite">
-        {weekDates.map((date) => {
-          const dateKey = getDateKey(date);
-          const dayEvents = sortEvents(
-            events.filter((event) => eventMatchesDate(event, dateKey))
-          );
-          const visibleEvents = dayEvents.slice(0, MAX_EVENTS_PER_DAY);
-          const hiddenCount = Math.max(0, dayEvents.length - visibleEvents.length);
-          const isToday = dateKey === todayKey;
-
-          return (
-            <article
-              key={dateKey}
-              className="elder-week-col"
-              data-today={isToday ? "true" : undefined}
-            >
-              <div className="elder-week-col-head">
-                <div className="elder-week-col-weekday">{WEEK_LABELS[date.getDay()]}</div>
-                <div className="elder-week-col-date">{formatTitleDate(date)}</div>
-                {isToday && <span className="elder-week-col-badge">오늘</span>}
+    <div className="bg-[var(--page-bg)]">
+      <Container mode="elder" className="min-h-[100dvh] py-4 md:py-6 lg:py-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+          <header className="rounded-xl border border-gray-200 bg-white p-3 md:p-4" aria-label="주간 이동">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-[minmax(0,140px)_minmax(0,1fr)_minmax(0,140px)] md:items-center md:gap-3">
+              <IconButton
+                icon="<"
+                label="이전 주"
+                mobileLabel="이전"
+                className="w-full text-sm md:h-12 md:w-full md:px-0"
+                onClick={() => setWeekOffset((prev) => prev - 1)}
+              />
+              <div className="col-span-2 text-center md:col-span-1">
+                <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{weekTitle}</h1>
+                <p className="mt-1 text-base font-medium text-gray-600">{rangeText}</p>
               </div>
-              {dayEvents.length === 0 ? (
-                <div className="elder-week-col-empty">일정 없음</div>
-              ) : (
-                <ul className="elder-week-col-list">
-                  {visibleEvents.map((event) => (
-                    <li key={`${event.id}-${dateKey}`} className="elder-week-col-event">
-                      <div className="elder-week-col-time">{formatEventTime(event)}</div>
-                      <div className="elder-week-col-title">{event.label}</div>
-                      {event.startDate !== event.endDate && (
-                        <div className="elder-week-col-note">
-                          기간 {event.startDate} ~ {event.endDate}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {hiddenCount > 0 && (
-                <div className="elder-week-col-more">외 {hiddenCount}개 일정</div>
-              )}
-            </article>
-          );
-        })}
-      </section>
+              <IconButton
+                icon=">"
+                label="다음 주"
+                mobileLabel="다음"
+                className="w-full text-sm md:h-12 md:w-full md:px-0"
+                onClick={() => setWeekOffset((prev) => prev + 1)}
+              />
+            </div>
+          </header>
+
+          <div className="lg:hidden">
+            <AgendaView days={viewDays} />
+          </div>
+
+          <WeekGrid days={viewDays} className="hidden lg:grid" />
+        </div>
+      </Container>
     </div>
   );
 }

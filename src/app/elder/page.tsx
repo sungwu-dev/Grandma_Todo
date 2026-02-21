@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AuthGate from "@/components/auth-gate";
+import Container from "@/components/ui/container";
+import PrimaryButton from "@/components/ui/primary-button";
+import IconButton from "@/components/ui/icon-button";
 import {
   DEFAULT_ALERT_MINUTES,
   DEFAULT_ALERT_TARGET,
@@ -15,8 +18,6 @@ import {
   findCurrentBlockIndex,
   formatKoreanTime,
   getDateKey,
-  getDayProgressPercent,
-  getProgressPercentForTime,
   pad2,
   toMinutes
 } from "@/lib/time";
@@ -136,14 +137,6 @@ function ElderPageContent() {
     isPreview &&
     previewIndex !== null &&
     (previewIndex !== currentIndex || previewDayOffset !== 0);
-  const basePercent =
-    previewUsesTaskTime && displayBlock
-      ? getProgressPercentForTime(displayBlock.start)
-      : getDayProgressPercent(now);
-  const progressPercent = (Number.isFinite(basePercent) ? basePercent : 0).toFixed(2);
-  const taskProgressStyle = {
-    "--time-progress": `${progressPercent}%`
-  } as React.CSSProperties;
 
   const displayMinutes = useMemo(() => {
     if (previewUsesTaskTime && displayBlock) {
@@ -602,88 +595,116 @@ function ElderPageContent() {
       ? `시간 ${displayBlock.start} ~ ${displayBlock.end}`
       : "";
   const textLength = displayTaskLabel.replace(/\s/g, "").length;
-  const taskSizeClass =
-    textLength >= 26 ? "task-text--xlong" : textLength >= 18 ? "task-text--long" : "";
+  const taskTitleClass =
+    textLength >= 26
+      ? "text-3xl font-bold leading-tight md:text-5xl"
+      : textLength >= 18
+        ? "text-3xl font-bold leading-tight md:text-[3.5rem]"
+        : "text-3xl font-bold leading-tight md:text-6xl";
   const nowLabelText = isPreview ? "미리보기" : activeEvent ? "특별 일정" : "지금 할 일";
 
   return (
-    <div className="app elder-home" id="appRoot">
-      <header className="top">
-        <div id="dateText" className="date-text">
-          {dateLine}
-        </div>
-        <div id="timeText" className="time-text" aria-live="polite">
-          {timeLine}
-        </div>
-        <div className="mt-3 flex justify-center">
-          <button
-            type="button"
-            className="elder-audio-btn"
-            data-active={audioEnabled ? "true" : undefined}
-            onClick={handleAudioToggle}
-          >
-            {audioEnabled ? "🔊 소리 켜짐" : "🔊 소리 켜기"}
-          </button>
-        </div>
-      </header>
+    <div className="bg-[var(--page-bg)]">
+      <Container mode="elder" className="min-h-[100dvh] py-4 md:py-6 lg:py-8">
+        <div className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col gap-4 md:gap-6">
+          <header className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-center md:px-6 md:py-5">
+            <div id="dateText" className="text-sm font-semibold text-gray-600">
+              {dateLine}
+            </div>
+            <div
+              id="timeText"
+              className="mt-1 text-3xl font-bold tracking-tight text-gray-900 md:text-5xl"
+              aria-live="polite"
+            >
+              {timeLine}
+            </div>
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-base font-semibold text-gray-700 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
+                data-active={audioEnabled ? "true" : undefined}
+                onClick={handleAudioToggle}
+              >
+                {audioEnabled ? "소리 켜짐" : "소리 켜기"}
+              </button>
+            </div>
+          </header>
 
-      <main className="middle">
-        <button
-          id="prevBtn"
-          className="nav-btn prev"
-          aria-label="이전 시간대 미리보기"
-          onClick={() => handlePreview(-1)}
-        >
-          <span className="nav-icon" aria-hidden="true">
-            &lt;
-          </span>
-        </button>
+          <main className="flex-1">
+            <div className="grid gap-2 md:grid-cols-[56px_minmax(0,1fr)_56px] md:items-stretch md:gap-4">
+              <div className="hidden md:flex">
+                <IconButton
+                  icon="<"
+                  label="이전 시간대 미리보기"
+                  className="h-full w-full px-0"
+                  onClick={() => handlePreview(-1)}
+                />
+              </div>
 
-        <div
-          className={`task-area ${isPreview ? "previewing" : ""}`}
-          id="taskArea"
-          style={taskProgressStyle}
-        >
-          <div id="nowLabel" className="now-label">
-            {nowLabelText}
-          </div>
-          <div id="taskText" className={`task-text ${taskSizeClass}`} aria-live="polite">
-            {displayTaskLabel}
-          </div>
-          <div id="taskMeta" className="task-meta">
-            {taskMeta}
-          </div>
+              <section
+                className={[
+                  "rounded-xl border border-gray-200 bg-white px-5 py-8 text-center",
+                  "md:px-8 md:py-10",
+                  isPreview ? "border-gray-300" : ""
+                ].join(" ")}
+              >
+                <div className="text-sm font-semibold text-gray-600">{nowLabelText}</div>
+                <div id="taskText" className={`mt-2 text-gray-900 ${taskTitleClass}`} aria-live="polite">
+                  {displayTaskLabel}
+                </div>
+                <div className="mt-4 border-t border-gray-200 pt-3 text-base font-medium text-gray-600">
+                  {taskMeta}
+                </div>
+              </section>
+
+              <div className="hidden md:flex">
+                <IconButton
+                  icon=">"
+                  label="다음 시간대 미리보기"
+                  className="h-full w-full px-0"
+                  onClick={() => handlePreview(1)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                <PrimaryButton
+                  variant="neutral"
+                  className="min-h-12 text-base"
+                  onClick={() => handlePreview(-1)}
+                >
+                  이전
+                </PrimaryButton>
+                <PrimaryButton
+                  variant="neutral"
+                  className="min-h-12 text-base"
+                  onClick={() => handlePreview(1)}
+                >
+                  다음
+                </PrimaryButton>
+              </div>
+            </div>
+          </main>
+
+          <footer>
+            <PrimaryButton
+              id="doneBtn"
+              variant="primary"
+              aria-pressed={doneChecked}
+              aria-hidden={hideDone ? "true" : undefined}
+              aria-disabled={doneDisabled ? "true" : undefined}
+              disabled={doneDisabled}
+              onClick={handleDoneClick}
+              className={[
+                "w-full min-h-14 rounded-full py-4 text-xl md:min-h-16 md:text-2xl",
+                doneChecked ? "border-amber-800 bg-amber-800" : "",
+                hideDone ? "invisible pointer-events-none" : ""
+              ].join(" ")}
+            >
+              다 했어요!
+            </PrimaryButton>
+          </footer>
         </div>
-
-        <button
-          id="nextBtn"
-          className="nav-btn next"
-          aria-label="다음 시간대 미리보기"
-          onClick={() => handlePreview(1)}
-        >
-          <span className="nav-icon" aria-hidden="true">
-            &gt;
-          </span>
-        </button>
-      </main>
-
-      <footer className="bottom">
-        <button
-          id="doneBtn"
-          className="done-btn"
-          aria-pressed={doneChecked}
-          aria-hidden={hideDone ? "true" : undefined}
-          aria-disabled={doneDisabled ? "true" : undefined}
-          data-hidden={hideDone ? "true" : undefined}
-          data-checked={doneChecked ? "true" : undefined}
-          data-disabled={doneDisabled ? "true" : undefined}
-          disabled={doneDisabled}
-          onClick={handleDoneClick}
-        >
-          <span className="done-check" aria-hidden="true" />
-          <span id="doneText">다 했어요!</span>
-        </button>
-      </footer>
+      </Container>
 
       {flashOn && (
         <div
@@ -700,19 +721,14 @@ function ElderPageContent() {
           aria-modal="true"
         >
           <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
-          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white/95 p-8 text-center shadow-2xl">
+          <div className="relative z-10 w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 text-center">
             <div className="text-sm font-semibold tracking-[0.4em] text-slate-500">알림</div>
             <div className="mt-4 whitespace-pre-line text-3xl font-bold text-slate-900">
               {alertInfo.message}
             </div>
-            <button
-              type="button"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full py-3 text-xl font-bold shadow-lg"
-              style={{ backgroundColor: "var(--theme)", color: "#1b1b1b" }}
-              onClick={stopAlert}
-            >
+            <PrimaryButton type="button" className="mt-6 w-full rounded-lg py-3 text-xl" onClick={stopAlert}>
               확인
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       )}
@@ -724,16 +740,11 @@ function ElderPageContent() {
           aria-modal="true"
         >
           <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white/95 p-8 text-center shadow-2xl">
+          <div className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 text-center">
             <div className="text-3xl font-bold text-slate-900">잘했어요!</div>
-            <button
-              type="button"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full py-3 text-xl font-bold shadow-lg"
-              style={{ backgroundColor: "var(--theme)", color: "#1b1b1b" }}
-              onClick={closeDoneModal}
-            >
+            <PrimaryButton type="button" className="mt-6 w-full rounded-lg py-3 text-xl" onClick={closeDoneModal}>
               확인
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       )}

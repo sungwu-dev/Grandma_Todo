@@ -612,7 +612,7 @@ function ElderPageContent() {
 
   return (
     <div className="min-h-[100dvh] bg-gray-50">
-      <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col gap-3 py-3 md:grid md:h-[100dvh] md:grid-rows-[auto_1fr] md:overflow-hidden md:gap-3 md:py-2">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col gap-3 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] md:grid md:h-[100dvh] md:grid-rows-[auto_1fr] md:overflow-hidden md:gap-3 md:py-2">
         <header className="mx-auto w-full max-w-[920px] px-4 md:px-6 lg:px-8">
           <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-center shadow-sm md:px-6 md:py-3">
             <div id="dateText" className="text-lg font-semibold text-gray-700 md:text-xl">

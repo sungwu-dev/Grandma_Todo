@@ -117,7 +117,7 @@ export default function EditProfilePage() {
 
   return (
     <AuthGate>
-      <div className="page">
+      <div className="page profile-edit-page">
         <header className="page-header">
           <h1 className="page-title">정보 수정</h1>
           <p className="page-subtitle">프로필 정보를 업데이트할 수 있어요.</p>

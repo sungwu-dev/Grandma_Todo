@@ -508,7 +508,7 @@ function LoginPageContent() {
   const allSignupValid = signupErrors.every((error) => !error);
 
   return (
-    <div className="page">
+    <div className="page auth-page">
       <header className="page-header">
         <h1 className="page-title">{isSignup ? "회원가입" : "로그인"}</h1>
         {!isSignup && (

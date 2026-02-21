@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --theme: #8c6bb1;
-  --theme-tint: #f4effa;
+  --theme: #2f6f5e;
+  --theme-tint: #eaf3ef;
   --text-main: #1d1d1d;
   --text-muted: #5a5a5a;
   --surface: rgba(255, 255, 255, 0.88);
@@ -243,7 +243,7 @@ input {
 
 .profile-menu-item:hover,
 .profile-menu-item:focus-visible {
-  background: rgba(140, 107, 177, 0.12);
+  background: rgba(47, 111, 94, 0.14);
   outline: none;
 }
 
@@ -568,6 +568,68 @@ input {
 
 .calendar-page {
   max-width: 1200px;
+}
+
+.calendar-page,
+.auth-page,
+.profile-edit-page,
+.elder-home,
+.elder-week {
+  --theme: #2f6f5e;
+  --theme-tint: #eaf3ef;
+  --tone-ink: #18302a;
+  --tone-muted: #4b5b55;
+  --tone-border: rgba(24, 48, 42, 0.12);
+  --tone-soft: rgba(47, 111, 94, 0.14);
+}
+
+.calendar-page .page-title,
+.auth-page .page-title,
+.profile-edit-page .page-title {
+  color: var(--tone-ink);
+}
+
+.calendar-page .page-subtitle,
+.auth-page .page-subtitle,
+.profile-edit-page .page-subtitle {
+  color: var(--tone-muted);
+}
+
+.calendar-page .card {
+  border-color: var(--tone-border);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 245, 0.92));
+}
+
+.calendar-page .calendar-modal-card {
+  border-color: var(--tone-border);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 246, 0.92));
+}
+
+.auth-page .signup-form,
+.profile-edit-page .signup-form {
+  padding: clamp(14px, 2.4vw, 24px);
+  border-radius: 24px;
+  border: 1px solid var(--tone-border);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 245, 0.92));
+  box-shadow: var(--shadow-soft);
+}
+
+.auth-page .signup-field,
+.profile-edit-page .signup-field {
+  border: 1px solid var(--tone-border);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+
+.auth-page .signup-form .field span,
+.profile-edit-page .signup-form .field span {
+  color: rgba(24, 48, 42, 0.68);
+}
+
+.auth-page .text-link,
+.profile-edit-page .text-link {
+  color: #2f6f5e;
+  font-weight: 700;
 }
 
 .page-header {
@@ -2093,8 +2155,8 @@ input {
 }
 
 .signup-field:focus-within {
-  border-color: rgba(140, 107, 177, 0.45);
-  box-shadow: 0 16px 30px rgba(140, 107, 177, 0.18);
+  border-color: rgba(47, 111, 94, 0.42);
+  box-shadow: 0 16px 30px rgba(47, 111, 94, 0.15);
   transform: translateY(-1px);
 }
 
@@ -2151,8 +2213,8 @@ input {
 
 .signup-form .reveal-button[aria-pressed="true"],
 .signup-form .reveal-button:active {
-  background: rgba(140, 107, 177, 0.14);
-  border-color: rgba(140, 107, 177, 0.45);
+  background: rgba(47, 111, 94, 0.14);
+  border-color: rgba(47, 111, 94, 0.45);
   color: var(--text-main);
 }
 
@@ -2207,8 +2269,8 @@ input {
 
 .birthdate-input-slot:focus {
   outline: none;
-  border-color: rgba(140, 107, 177, 0.6);
-  box-shadow: 0 0 0 4px rgba(140, 107, 177, 0.18);
+  border-color: rgba(47, 111, 94, 0.5);
+  box-shadow: 0 0 0 4px rgba(47, 111, 94, 0.16);
 }
 
 .birthdate-input-slot::placeholder {

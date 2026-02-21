@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
 import { WEEKDAY_THEMES } from "@/lib/constants";
 import type { CalendarEvent } from "@/lib/types";
@@ -130,42 +129,29 @@ function ElderCalendarContent() {
 
   return (
     <div className="page elder-week elder-week-screen">
-      <div className="elder-top-actions" aria-label="빠른 이동">
-        <button
-          type="button"
-          className="big-button elder-calendar-fab elder-calendar-fab-left"
-          onClick={() => setWeekOffset(0)}
-        >
-          금주 일정
-        </button>
-        <Link
-          className="big-button elder-calendar-fab elder-calendar-fab-right"
-          href="/elder"
-        >
-          현재 할 일
-        </Link>
-      </div>
       <header className="elder-week-top" aria-label="주간 이동">
-        <div className="elder-week-title-row">
+        <div className="elder-week-nav">
           <button
             type="button"
             className="elder-week-arrow elder-week-arrow--prev"
             onClick={() => setWeekOffset((prev) => prev - 1)}
             aria-label="이전 주"
           >
-            ◀
+            &lt;
           </button>
-          <div className="elder-week-title">{weekTitle}</div>
+          <div className="elder-week-title-wrap">
+            <div className="elder-week-title">{weekTitle}</div>
+            <div className="elder-week-range">{rangeText}</div>
+          </div>
           <button
             type="button"
             className="elder-week-arrow elder-week-arrow--next"
             onClick={() => setWeekOffset((prev) => prev + 1)}
             aria-label="다음 주"
           >
-            ▶
+            &gt;
           </button>
         </div>
-        <div className="elder-week-range">{rangeText}</div>
       </header>
 
       <section className="elder-week-board" aria-live="polite">

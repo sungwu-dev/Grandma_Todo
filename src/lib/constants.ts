@@ -31,11 +31,11 @@ export function getDefaultAlertMinutes(count?: number): number[] {
 }
 
 export const WEEKDAY_THEMES: WeekdayTheme[] = [
-  { name: "일", color: "#4f6f66", tint: "#f1f5f3" },
-  { name: "월", color: "#56756c", tint: "#eef3f1" },
-  { name: "화", color: "#5f7b73", tint: "#edf3f1" },
-  { name: "수", color: "#668179", tint: "#ecf2ef" },
-  { name: "목", color: "#2f6f5e", tint: "#e8f3ef" },
-  { name: "금", color: "#5b766f", tint: "#edf2f0" },
-  { name: "토", color: "#4b675f", tint: "#eff3f1" }
+  { name: "일", color: "#f2994a", tint: "#fff3e6" },
+  { name: "월", color: "#8c6bb1", tint: "#f4effa" },
+  { name: "화", color: "#d64b4b", tint: "#fdecec" },
+  { name: "수", color: "#3b82c4", tint: "#e7f2fb" },
+  { name: "목", color: "#2f9e6c", tint: "#e6f6ef" },
+  { name: "금", color: "#f0b429", tint: "#fff7dd" },
+  { name: "토", color: "#9a6b3f", tint: "#f5ede3" }
 ];

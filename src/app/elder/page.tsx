@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   DEFAULT_ALERT_MINUTES,
   DEFAULT_ALERT_TARGET,
@@ -120,18 +118,6 @@ function ElderPageContent() {
     themeTint: string;
     pageBg: string;
   } | null>(null);
-  const supabaseAvailable = useMemo(() => {
-    return Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-  }, []);
-  const supabase = useMemo(
-    () => (supabaseAvailable ? createSupabaseBrowserClient() : null),
-    [supabaseAvailable]
-  );
-  const [showHomeButton, setShowHomeButton] = useState(true);
-  const [homeButtonReady, setHomeButtonReady] = useState(false);
 
   const blocks = useMemo(() => buildBlocks(timeBlocks), [timeBlocks]);
   const displayIndex = previewIndex ?? currentIndex;
@@ -217,51 +203,6 @@ function ElderPageContent() {
   }
   const doneDisabled = hideDone || beforeStart || Boolean(activeEvent);
 
-  useEffect(() => {
-    if (!supabaseAvailable) {
-      setShowHomeButton(true);
-      setHomeButtonReady(true);
-      return;
-    }
-    if (!supabase) {
-      return;
-    }
-
-    let cancelled = false;
-    const checkHomeVisibility = async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (!session) {
-        if (!cancelled) {
-          setShowHomeButton(true);
-          setHomeButtonReady(true);
-        }
-        return;
-      }
-      const { data: members, error } = await supabase
-        .from("group_members")
-        .select("role")
-        .eq("user_id", session.user.id);
-      if (cancelled) {
-        return;
-      }
-      if (error) {
-        setShowHomeButton(true);
-        setHomeButtonReady(true);
-        return;
-      }
-      const isGrandma = (members ?? []).some(
-        (member: { role?: string | null }) => member.role === "viewer"
-      );
-      setShowHomeButton(!isGrandma);
-      setHomeButtonReady(true);
-    };
-
-    void checkHomeVisibility();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabaseAvailable, supabase]);
 
   useEffect(() => {
     const stored = localStorage.getItem("audio_enabled") === "1";
@@ -664,20 +605,9 @@ function ElderPageContent() {
   const taskSizeClass =
     textLength >= 26 ? "task-text--xlong" : textLength >= 18 ? "task-text--long" : "";
   const nowLabelText = isPreview ? "미리보기" : activeEvent ? "특별 일정" : "지금 할 일";
-  const shouldShowHomeButton = !supabaseAvailable || (homeButtonReady && showHomeButton);
 
   return (
     <div className="app elder-home" id="appRoot">
-      <div className="elder-top-actions" aria-label="빠른 이동">
-        {shouldShowHomeButton && (
-          <Link className="big-button elder-calendar-fab elder-calendar-fab-left" href="/">
-            홈
-          </Link>
-        )}
-        <Link className="big-button elder-calendar-fab elder-calendar-fab-right" href="/elder/calendar">
-          달력 보기
-        </Link>
-      </div>
       <header className="top">
         <div id="dateText" className="date-text">
           {dateLine}
@@ -703,12 +633,7 @@ function ElderPageContent() {
           className="nav-btn prev"
           aria-label="이전 시간대 미리보기"
           onClick={() => handlePreview(-1)}
-        >
-          <span className="nav-btn-arrow" aria-hidden="true">
-            ←
-          </span>
-          <span className="nav-btn-text">이전</span>
-        </button>
+        />
 
         <div
           className={`task-area ${isPreview ? "previewing" : ""}`}
@@ -731,12 +656,7 @@ function ElderPageContent() {
           className="nav-btn next"
           aria-label="다음 시간대 미리보기"
           onClick={() => handlePreview(1)}
-        >
-          <span className="nav-btn-arrow" aria-hidden="true">
-            →
-          </span>
-          <span className="nav-btn-text">다음</span>
-        </button>
+        />
       </main>
 
       <footer className="bottom">

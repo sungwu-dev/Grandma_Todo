@@ -633,7 +633,11 @@ function ElderPageContent() {
           className="nav-btn prev"
           aria-label="이전 시간대 미리보기"
           onClick={() => handlePreview(-1)}
-        />
+        >
+          <span className="nav-icon" aria-hidden="true">
+            &lt;
+          </span>
+        </button>
 
         <div
           className={`task-area ${isPreview ? "previewing" : ""}`}
@@ -656,7 +660,11 @@ function ElderPageContent() {
           className="nav-btn next"
           aria-label="다음 시간대 미리보기"
           onClick={() => handlePreview(1)}
-        />
+        >
+          <span className="nav-icon" aria-hidden="true">
+            &gt;
+          </span>
+        </button>
       </main>
 
       <footer className="bottom">

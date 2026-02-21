@@ -611,20 +611,20 @@ function ElderPageContent() {
 
   return (
     <div className="min-h-[100dvh] bg-gray-50">
-      <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col gap-3 py-3 md:h-[100dvh] md:overflow-hidden md:gap-4 md:py-4">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col gap-3 py-3 md:grid md:h-[100dvh] md:grid-rows-[auto_1fr] md:overflow-hidden md:gap-3 md:py-2">
         <header className="mx-auto w-full max-w-[920px] px-4 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-center shadow-sm md:px-6 md:py-4">
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-center shadow-sm md:px-6 md:py-3">
             <div id="dateText" className="text-lg font-semibold text-gray-700 md:text-xl">
               {dateLine}
             </div>
             <div
               id="timeText"
-              className="mt-1 text-5xl font-extrabold leading-tight tracking-tight text-gray-900 md:text-6xl lg:text-7xl"
+              className="mt-0.5 text-5xl font-extrabold leading-tight tracking-tight text-gray-900 md:text-6xl lg:text-7xl"
               aria-live="polite"
             >
               {timeLine}
             </div>
-            <div className="mt-3 flex justify-center">
+            <div className="mt-2 flex justify-center">
               <button
                 type="button"
                 className="inline-flex min-h-12 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-base font-semibold text-gray-700 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
@@ -637,7 +637,7 @@ function ElderPageContent() {
           </div>
         </header>
 
-        <section className="mx-auto w-full max-w-[920px] px-4 md:flex md:flex-1 md:items-center md:px-6 lg:px-8">
+        <section className="mx-auto w-full max-w-[920px] px-4 md:flex md:flex-1 md:items-center md:justify-center md:px-6 lg:px-8">
           <div className="grid w-full grid-cols-[56px_1fr_56px] items-center gap-3 md:gap-4">
             <div className="flex items-center justify-center">
               <IconButton

@@ -5,7 +5,13 @@ import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { DEFAULT_ALERT_MINUTES, TIME_BLOCKS } from "@/lib/constants";
-import { loadSchedule, SCHEDULE_STORAGE_KEY } from "@/lib/storage";
+import {
+  DONE_ACTIVITY_STORAGE_KEY,
+  loadDoneActivities,
+  loadSchedule,
+  SCHEDULE_STORAGE_KEY,
+  type DoneActivityItem
+} from "@/lib/storage";
 import { buildBlocks } from "@/lib/time";
 
 type FamilyMember = {
@@ -118,6 +124,28 @@ const getAvatarInitials = (name: string) => {
   return trimmed.slice(0, 2).toUpperCase();
 };
 
+const formatRecentActivityTime = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "--:--";
+  }
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayDiff = Math.round((today.getTime() - target.getTime()) / 86400000);
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  if (dayDiff === 0) {
+    return `오늘 ${hh}:${mm}`;
+  }
+  if (dayDiff === 1) {
+    return `어제 ${hh}:${mm}`;
+  }
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${month}.${day} ${hh}:${mm}`;
+};
+
 const FAMILY_GROUPS: FamilyGroup[] = [
   {
     id: "park-hyunju",
@@ -169,6 +197,7 @@ export default function MyPage() {
   });
   const [nextSchedule, setNextSchedule] = useState<NextSchedule | null>(null);
   const [registeredMembers, setRegisteredMembers] = useState<string[]>([]);
+  const [recentActivities, setRecentActivities] = useState<DoneActivityItem[]>([]);
 
   useEffect(() => {
     if (!supabase) {
@@ -301,6 +330,26 @@ export default function MyPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const updateRecentActivities = () => {
+      const next = [...loadDoneActivities()].sort((a, b) => {
+        return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+      });
+      setRecentActivities(next.slice(0, 3));
+    };
+
+    updateRecentActivities();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === DONE_ACTIVITY_STORAGE_KEY) {
+        updateRecentActivities();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
   const registeredNameSet = useMemo(() => {
     const set = new Set(registeredMembers);
     if (profileName.trim()) {
@@ -392,27 +441,29 @@ export default function MyPage() {
             <section className="card profile-card">
               <h2 className="profile-section-title">최근 활동</h2>
               <ul className="profile-activity-list">
-                <li className="profile-activity-item">
-                  <div className="profile-activity-head">
-                    <span className="profile-activity-title">점심 약 복용 체크</span>
-                    <span className="profile-activity-time">오늘 13:10</span>
-                  </div>
-                  <div className="profile-activity-meta">알림 1회 · 확인 완료</div>
-                </li>
-                <li className="profile-activity-item">
-                  <div className="profile-activity-head">
-                    <span className="profile-activity-title">물 마시기 리마인드</span>
-                    <span className="profile-activity-time">오늘 10:00</span>
-                  </div>
-                  <div className="profile-activity-meta">알림 2회 · 진행 중</div>
-                </li>
-                <li className="profile-activity-item">
-                  <div className="profile-activity-head">
-                    <span className="profile-activity-title">저녁 산책 기록</span>
-                    <span className="profile-activity-time">어제 18:40</span>
-                  </div>
-                  <div className="profile-activity-meta">기록 추가됨</div>
-                </li>
+                {recentActivities.length === 0 ? (
+                  <li className="profile-activity-item">
+                    <div className="profile-activity-head">
+                      <span className="profile-activity-title">완료된 활동이 아직 없어요</span>
+                      <span className="profile-activity-time">--:--</span>
+                    </div>
+                    <div className="profile-activity-meta">
+                      할머니 화면에서 완료 체크하면 최신 3개가 표시됩니다.
+                    </div>
+                  </li>
+                ) : (
+                  recentActivities.map((activity) => (
+                    <li key={activity.id} className="profile-activity-item">
+                      <div className="profile-activity-head">
+                        <span className="profile-activity-title">{activity.title}</span>
+                        <span className="profile-activity-time">
+                          {formatRecentActivityTime(activity.completedAt)}
+                        </span>
+                      </div>
+                      <div className="profile-activity-meta">완료 체크 · {activity.dateKey}</div>
+                    </li>
+                  ))
+                )}
               </ul>
             </section>
           </div>

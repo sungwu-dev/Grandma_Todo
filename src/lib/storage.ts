@@ -3,6 +3,16 @@ import { toMinutes, validateSchedule } from "./time";
 
 export const SCHEDULE_STORAGE_KEY = "schedule_v1";
 export const EVENTS_STORAGE_KEY = "events_v1";
+export const DONE_ACTIVITY_STORAGE_KEY = "done_activity_v1";
+
+export type DoneActivityItem = {
+  id: string;
+  title: string;
+  completedAt: string; // ISO datetime
+  dateKey: string; // YYYY-MM-DD
+};
+
+const MAX_DONE_ACTIVITY_ITEMS = 200;
 
 export function loadDoneSet(dateKey: string): Set<number> {
   if (typeof window === "undefined") {
@@ -25,6 +35,64 @@ export function saveDoneSet(dateKey: string, set: Set<number>): void {
     return;
   }
   localStorage.setItem(`done_${dateKey}`, JSON.stringify([...set]));
+}
+
+function normalizeDoneActivity(
+  item: Record<string, unknown>
+): DoneActivityItem | null {
+  const id = typeof item.id === "string" ? item.id.trim() : "";
+  const title = typeof item.title === "string" ? item.title.trim() : "";
+  const completedAt =
+    typeof item.completedAt === "string" ? item.completedAt.trim() : "";
+  const dateKey = typeof item.dateKey === "string" ? item.dateKey.trim() : "";
+  if (!id || !title || !completedAt || !dateKey) {
+    return null;
+  }
+  if (Number.isNaN(new Date(completedAt).getTime())) {
+    return null;
+  }
+  return { id, title, completedAt, dateKey };
+}
+
+export function loadDoneActivities(): DoneActivityItem[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  const raw = localStorage.getItem(DONE_ACTIVITY_STORAGE_KEY);
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed
+      .map((item) =>
+        item && typeof item === "object"
+          ? normalizeDoneActivity(item as Record<string, unknown>)
+          : null
+      )
+      .filter((item): item is DoneActivityItem => Boolean(item));
+  } catch {
+    return [];
+  }
+}
+
+export function appendDoneActivity(
+  item: Omit<DoneActivityItem, "id">
+): DoneActivityItem {
+  const nextItem: DoneActivityItem = {
+    ...item,
+    id: `done_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  };
+  if (typeof window === "undefined") {
+    return nextItem;
+  }
+  const current = loadDoneActivities();
+  const next = [nextItem, ...current].slice(0, MAX_DONE_ACTIVITY_ITEMS);
+  localStorage.setItem(DONE_ACTIVITY_STORAGE_KEY, JSON.stringify(next));
+  return nextItem;
 }
 
 export function loadSchedule(): TimeBlock[] | null {

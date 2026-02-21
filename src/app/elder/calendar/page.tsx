@@ -80,13 +80,6 @@ function ElderCalendarContent() {
   } | null>(null);
 
   useEffect(() => {
-    document.body.classList.add("elder-mode");
-    return () => {
-      document.body.classList.remove("elder-mode");
-    };
-  }, []);
-
-  useEffect(() => {
     // localStorage: events_v1 (CalendarEvent 목록)
     setEvents(loadEvents());
   }, []);
@@ -158,15 +151,19 @@ function ElderCalendarContent() {
             type="button"
             className="elder-week-arrow elder-week-arrow--prev"
             onClick={() => setWeekOffset((prev) => prev - 1)}
-            aria-label="?? ? ??"
-          >?? ?</button>
+            aria-label="이전 주"
+          >
+            ◀
+          </button>
           <div className="elder-week-title">{weekTitle}</div>
           <button
             type="button"
             className="elder-week-arrow elder-week-arrow--next"
             onClick={() => setWeekOffset((prev) => prev + 1)}
-            aria-label="?? ? ??"
-          >?? ?</button>
+            aria-label="다음 주"
+          >
+            ▶
+          </button>
         </div>
         <div className="elder-week-range">{rangeText}</div>
       </header>

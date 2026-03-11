@@ -684,9 +684,12 @@ function ElderPageContent() {
                 aria-disabled={doneDisabled ? "true" : undefined}
                 disabled={doneDisabled}
                 onClick={handleDoneClick}
+                style={{
+                  backgroundColor: theme.color,
+                  borderColor: theme.color
+                }}
                 className={[
                   "w-full min-h-14 rounded-full py-3 text-xl md:min-h-16 md:py-4 md:text-2xl",
-                  doneChecked ? "border-amber-800 bg-amber-800" : "",
                   hideDone ? "invisible pointer-events-none" : ""
                 ].join(" ")}
               >

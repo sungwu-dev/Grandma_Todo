@@ -502,11 +502,13 @@ export default function MyPage() {
                             className="profile-member"
                             data-registered={isRegistered ? "true" : "false"}
                           >
-                            <span className="profile-member-dot" aria-hidden="true" />
                             <div className="profile-member-info">
                               <span className="profile-member-name">{member.name}</span>
                               <span className="profile-member-role">{member.role}</span>
                             </div>
+                            <span className="profile-member-dot">
+                              {isRegistered ? "가입 완료" : "미가입"}
+                            </span>
                           </li>
                         );
                       })}

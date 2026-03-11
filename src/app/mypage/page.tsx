@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthGate from "@/components/auth-gate";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  addRegisteredMember,
+  loadRegisteredMembers,
+  normalizeRegisteredMemberName,
+  subscribeRegisteredMembers,
+  syncAuthenticatedRegisteredMember
+} from "@/lib/registered-members";
 import { DEFAULT_ALERT_MINUTES, TIME_BLOCKS } from "@/lib/constants";
 import {
   DONE_ACTIVITY_STORAGE_KEY,
@@ -175,8 +182,6 @@ const FAMILY_GROUPS: FamilyGroup[] = [
   }
 ];
 
-const REGISTERED_MEMBERS_STORAGE_KEY = "registered_family_members_v1";
-
 export default function MyPage() {
   const supabaseAvailable = useMemo(() => {
     return Boolean(
@@ -242,45 +247,40 @@ export default function MyPage() {
   }, [supabase]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const raw = window.localStorage.getItem(REGISTERED_MEMBERS_STORAGE_KEY);
-    if (!raw) {
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        const normalized = parsed
-          .map((item) => String(item).trim())
-          .filter((item) => item.length > 0);
-        setRegisteredMembers(normalized);
-      }
-    } catch {
-      // Ignore malformed storage values.
-    }
+    setRegisteredMembers(loadRegisteredMembers());
+    return subscribeRegisteredMembers(setRegisteredMembers);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!supabase) {
       return;
     }
+    let cancelled = false;
+
+    const loadRegisteredState = async () => {
+      const members = await syncAuthenticatedRegisteredMember(supabase);
+      if (!cancelled) {
+        setRegisteredMembers(members);
+      }
+    };
+
+    void loadRegisteredState();
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      void loadRegisteredState();
+    });
+
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
     const name = profileName.trim();
     if (!name) {
       return;
     }
-    setRegisteredMembers((prev) => {
-      if (prev.includes(name)) {
-        return prev;
-      }
-      const next = [...prev, name];
-      window.localStorage.setItem(
-        REGISTERED_MEMBERS_STORAGE_KEY,
-        JSON.stringify(next)
-      );
-      return next;
-    });
+    setRegisteredMembers(addRegisteredMember(name));
   }, [profileName]);
 
   useEffect(() => {
@@ -351,9 +351,11 @@ export default function MyPage() {
   }, []);
 
   const registeredNameSet = useMemo(() => {
-    const set = new Set(registeredMembers);
+    const set = new Set(
+      registeredMembers.map((member) => normalizeRegisteredMemberName(member))
+    );
     if (profileName.trim()) {
-      set.add(profileName.trim());
+      set.add(normalizeRegisteredMemberName(profileName));
     }
     return set;
   }, [registeredMembers, profileName]);
@@ -491,7 +493,9 @@ export default function MyPage() {
                     <h3 className="profile-family-title">{group.title}</h3>
                     <ul className="profile-member-list">
                       {group.members.map((member) => {
-                        const isRegistered = registeredNameSet.has(member.name);
+                        const isRegistered = registeredNameSet.has(
+                          normalizeRegisteredMemberName(member.name)
+                        );
                         return (
                           <li
                             key={`${group.id}-${member.name}`}

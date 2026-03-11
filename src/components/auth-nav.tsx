@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { syncAuthenticatedRegisteredMember } from "@/lib/registered-members";
 
 type AuthStatus = "loading" | "signedOut" | "signedIn";
 type AuthSessionData = { session: { user: { id: string } } | null };
@@ -56,6 +57,7 @@ export default function AuthNav() {
         setIsGrandma(false);
         return;
       }
+      void syncAuthenticatedRegisteredMember(supabase);
       const { data: members, error } = await supabase
         .from("group_members")
         .select("role")

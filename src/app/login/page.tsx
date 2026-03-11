@@ -16,6 +16,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { registerMemberFromSignup } from "@/lib/registered-members";
 
 type Notice = { type: "success" | "error"; text: string } | null;
 type AuthSessionData = {
@@ -482,6 +483,12 @@ function LoginPageContent() {
         setSignupNotice({ type: "error", text: error.message });
         return;
       }
+      await registerMemberFromSignup(supabase, {
+        userId: data.user?.id,
+        name: trimmedName,
+        relation: trimmedRelation,
+        email: trimmedEmail
+      });
       const successMessage = data.session
         ? "회원가입이 완료되었습니다."
         : "회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.";
